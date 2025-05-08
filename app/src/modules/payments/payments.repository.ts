@@ -61,7 +61,8 @@ export class PaymentRepo {
 
   async delete(id: string) {
     const payment = await this.findOrFailById(id);
+    const tmp = {...payment}
     await this.repository.remove(payment);
-    return payment;
+    return tmp;
   }
 }

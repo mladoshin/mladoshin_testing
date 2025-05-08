@@ -13,17 +13,16 @@ export class CourseLesson {
   @PrimaryGeneratedColumn('uuid')
   id: string;
 
-  @Column({ type: 'double precision', default: 0 })
-  price: number;
+  @Column({ type: 'varchar', length: 256 })
+  title: string;
 
   @Column({ type: 'text' })
-  name: string;
+  content: string;
 
-  @Column({ type: 'timestamptz' })
-  date_start: string;
-
-  @Column({ type: 'timestamptz' })
-  date_finish: string;
+  @Column({
+    type: process.env.NODE_ENV === 'test' ? 'datetime' : 'timestamptz',
+  })
+  date: string;
 
   @ManyToOne(() => Course, (course) => course.lessons, { onDelete: 'CASCADE' })
   @JoinColumn({ name: 'course_id' })

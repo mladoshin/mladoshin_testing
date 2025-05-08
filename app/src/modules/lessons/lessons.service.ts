@@ -1,4 +1,5 @@
 import {
+  Inject,
   Injectable,
   InternalServerErrorException,
   NotFoundException,
@@ -11,7 +12,10 @@ import { CourseLesson } from './entities/course-lesson.entity';
 
 @Injectable()
 export class LessonsService {
-  constructor(private readonly courseLessonRepository: CourseLessonRepo) {}
+  constructor(
+    @Inject(CourseLessonRepo)
+    private readonly courseLessonRepository: CourseLessonRepo,
+  ) {}
 
   create(createLessonDto: CreateLessonDto): Promise<CourseLesson> {
     return this.courseLessonRepository.create(createLessonDto);

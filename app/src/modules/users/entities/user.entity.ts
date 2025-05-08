@@ -19,17 +19,25 @@ export class User {
   @PrimaryGeneratedColumn('uuid')
   id: string;
 
-  @Column({ unique: true })
+  @Column({ unique: true, type: 'varchar', length: 128 })
   email: string;
 
-  @Column()
+  @Column({ type: 'varchar', length: 128 })
   password: string;
 
-  @Column({ enum: UserRole, default: UserRole.USER })
+  @Column({ enum: UserRole, default: UserRole.USER, type: 'enum' })
   role: UserRole;
 
-  @OneToOne(() => UserProfile, (profile) => profile.user, { cascade: true })
+  @OneToOne(() => UserProfile, (profile) => profile.user, {
+    eager: true,
+    cascade: true,
+    onDelete: 'CASCADE'
+  })
+  @JoinColumn({ name: 'profile_id' })
   profile: UserProfile;
+
+  // @Column({ type: 'uuid', nullable: true })
+  // profile_id: string;
 
   @OneToMany(() => Payment, (payment) => payment.user)
   payments: Payment[];

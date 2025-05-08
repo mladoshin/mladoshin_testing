@@ -13,7 +13,10 @@ export class Payment {
   @PrimaryGeneratedColumn('uuid')
   id: string;
 
-  @Column({ type: 'timestamptz', default: () => 'CURRENT_TIMESTAMP' })
+  @Column({
+    type: process.env.NODE_ENV === 'test' ? 'datetime' : 'timestamptz',
+    default: () => process.env.NODE_ENV === 'test' ? "CURRENT_TIMESTAMP" : "now()",
+  })
   timestamp: string;
 
   @Column({ type: 'double precision' })

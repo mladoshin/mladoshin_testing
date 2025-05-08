@@ -1,4 +1,5 @@
 import {
+  Inject,
   Injectable,
   InternalServerErrorException,
   NotFoundException,
@@ -11,7 +12,9 @@ import { User } from './entities/user.entity';
 
 @Injectable()
 export class UsersService {
-  public constructor(private readonly userRepository: UserRepo) {}
+  public constructor(
+    @Inject(UserRepo) private readonly userRepository: UserRepo,
+  ) {}
 
   create(createUserDto: CreateUserDto): Promise<User> {
     return this.userRepository.create(createUserDto);

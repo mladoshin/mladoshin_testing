@@ -13,10 +13,14 @@ export class Course {
   @Column({ type: 'text' })
   name: string;
 
-  @Column({ type: 'timestamptz' })
+  @Column({
+    type: process.env.NODE_ENV === 'test' ? 'datetime' : 'timestamptz',
+  })
   date_start: string;
 
-  @Column({ type: 'timestamptz' })
+  @Column({
+    type: process.env.NODE_ENV === 'test' ? 'datetime' : 'timestamptz',
+  })
   date_finish: string;
 
   @OneToMany(() => CourseLesson, (lesson) => lesson.course)

@@ -1,4 +1,5 @@
 import {
+  Inject,
   Injectable,
   InternalServerErrorException,
   NotFoundException,
@@ -11,7 +12,7 @@ import { RepositoryNotFoundError } from 'src/common/errors/db-errors';
 
 @Injectable()
 export class CoursesService {
-  constructor(private readonly courseRepository: CourseRepo) {}
+  constructor(@Inject(CourseRepo) private readonly courseRepository: CourseRepo) {}
 
   create(createCourseDto: CreateCourseDto): Promise<Course> {
     return this.courseRepository.create(createCourseDto);

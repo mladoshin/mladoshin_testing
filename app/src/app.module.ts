@@ -8,6 +8,9 @@ import { PaymentsModule } from './modules/payments/payments.module';
 import { LessonsModule } from './modules/lessons/lessons.module';
 import { TypeOrmModule } from '@nestjs/typeorm';
 import { ConfigModule, ConfigService } from '@nestjs/config';
+import { BcryptService } from './common/services/HashService';
+import { TokenService } from './common/services/TokenService';
+import { CourseCommands, ListCourseCommand } from './console/commands/course.commands';
 
 @Module({
   imports: [
@@ -33,6 +36,6 @@ import { ConfigModule, ConfigService } from '@nestjs/config';
     LessonsModule,
   ],
   controllers: [AppController],
-  providers: [AppService],
+  providers: [AppService, BcryptService, TokenService],
 })
 export class AppModule {}

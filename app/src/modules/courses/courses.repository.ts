@@ -50,7 +50,8 @@ export class CourseRepo {
 
   async delete(id: string) {
     const course = await this.findOrFailById(id);
+    const tmp = {...course}
     await this.repository.remove(course);
-    return course;
+    return tmp;
   }
 }

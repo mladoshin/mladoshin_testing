@@ -1,16 +1,19 @@
 import { Injectable } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { RepositoryNotFoundError } from 'src/common/errors/db-errors';
-import { CreateUserDto } from 'src/modules/users/dto/create-user.dto';
-import { User } from 'src/modules/users/entities/user.entity';
+import { CreateUserDto } from './dto/create-user.dto';
+import { User } from './entities/user.entity';
 import { Repository } from 'typeorm';
 import { UpdateUserDto } from './dto/update-user.dto';
+import { UserProfile } from './entities/user-profile.entity';
 
 @Injectable()
 export class UserRepo {
   public constructor(
     @InjectRepository(User)
     private readonly repository: Repository<User>,
+    @InjectRepository(UserProfile)
+    private readonly profileRepository: Repository<UserProfile>,
   ) {}
 
   findByEmail(email: string) {
@@ -37,6 +40,10 @@ export class UserRepo {
 
   create(createUserDto: CreateUserDto) {
     const user = this.repository.create(createUserDto);
+    user.profile = this.profileRepository.create({
+      first_name: createUserDto.first_name,
+      last_name: createUserDto.last_name,
+    });
     return this.repository.save(user);
   }
 
