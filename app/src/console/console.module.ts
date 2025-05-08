@@ -22,6 +22,7 @@ import { CoursesService } from 'src/modules/courses/courses.service';
 import { CreateLessonCommand, GetLessonCommand, LessonCommands, ListLessonCommand, RemoveLessonCommand, UpdateLessonCommand } from './commands/lesson.commands';
 import { CheckUserCommand, LoginUserCommand, RegisterUserCommand } from './commands/auth.command';
 import { CreateUserCommand, ListUsersCommand, RemoveUserCommand, ShowUserCommand, UpdateUserCommand } from './commands/user.command';
+import { CreatePaymentCommand, GetPaymentCommand, ListPaymentsCommand, RemovePaymentCommand, UpdatePaymentCommand } from './commands/payment.command';
 
 @Module({
   imports: [
@@ -48,7 +49,8 @@ import { CreateUserCommand, ListUsersCommand, RemoveUserCommand, ShowUserCommand
     CoursesModule,
     LessonsModule,
     AuthModule,
-    UsersModule
+    UsersModule,
+    PaymentsModule
   ],
   providers: [
     //Course
@@ -76,7 +78,14 @@ import { CreateUserCommand, ListUsersCommand, RemoveUserCommand, ShowUserCommand
     ListUsersCommand,
     ShowUserCommand,
     UpdateUserCommand,
-    RemoveUserCommand
+    RemoveUserCommand,
+
+    //Payment
+    ListPaymentsCommand,
+    CreatePaymentCommand,
+    GetPaymentCommand,
+    UpdatePaymentCommand,
+    RemovePaymentCommand
   ],
 })
 export class ConsoleModule {}

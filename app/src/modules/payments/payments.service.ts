@@ -1,4 +1,5 @@
 import {
+  Inject,
   Injectable,
   InternalServerErrorException,
   NotFoundException,
@@ -12,7 +13,7 @@ import { Payment } from './entities/payment.entity';
 
 @Injectable()
 export class PaymentsService {
-  public constructor(private readonly paymentRepository: PaymentRepo) {}
+  public constructor(@Inject(PaymentRepo) private readonly paymentRepository: PaymentRepo) {}
 
   create(createPaymentDto: CreatePaymentDto): Promise<Payment> {
     return this.paymentRepository.create(createPaymentDto);
