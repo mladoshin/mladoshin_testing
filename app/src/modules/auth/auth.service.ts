@@ -1,6 +1,5 @@
 import {
   ConflictException,
-  ForbiddenException,
   Inject,
   Injectable,
   NotFoundException,
@@ -8,19 +7,31 @@ import {
 } from '@nestjs/common';
 import { LoginUserDto } from './dto/login.dto';
 import { RegisterUserDto } from './dto/register.dto';
-import { UserRepo } from '../users/users.repository';
-import { BcryptService } from 'src/common/services/HashService';
-import { TokenPair, TokenService } from 'src/common/services/TokenService';
+import { IUserRepo } from '../users/users.repository';
+import { IHashService } from 'src/common/services/HashService';
+import {
+  ITokenService,
+  TokenPair,
+} from 'src/common/services/TokenService';
 import { User } from '../users/entities/user.entity';
 import { ConfigService } from '@nestjs/config';
 import { RepositoryNotFoundError } from 'src/common/errors/db-errors';
 
+export interface IAuthService {
+  createTokenPair(user: User): TokenPair;
+  login(loginUserDto: LoginUserDto): Promise<TokenPair>;
+  register(registerUserDto: RegisterUserDto): Promise<TokenPair>;
+  logout(): string;
+  getMe(userId: string): Promise<User>;
+  check(email: string): Promise<boolean>;
+}
+
 @Injectable()
-export class AuthService {
+export class AuthService implements IAuthService {
   constructor(
-    @Inject(UserRepo) private readonly userRepository: UserRepo,
-    @Inject(BcryptService) private readonly hashService: BcryptService,
-    @Inject(TokenService) private readonly tokenService: TokenService,
+    @Inject('IUserRepo') private readonly userRepository: IUserRepo,
+    @Inject('IHashService') private readonly hashService: IHashService,
+    @Inject('ITokenService') private readonly tokenService: ITokenService,
     @Inject(ConfigService) private readonly configService: ConfigService,
   ) {}
 

@@ -3,11 +3,23 @@ import { InjectRepository } from '@nestjs/typeorm';
 import { Repository } from 'typeorm';
 import { Course } from './entities/course.entity';
 import { CreateCourseDto } from './dto/create-course.dto';
-import { RepositoryNotFoundError } from 'src/common/errors/db-errors';
+import {
+  RepositoryNotFoundError,
+  RepositoryUnknownError,
+} from 'src/common/errors/db-errors';
 import { UpdateCourseDto } from './dto/update-course.dto';
 
+export interface ICourseRepo {
+  create(createCourseDto: CreateCourseDto): Promise<Course>;
+  update(id: string, updateCourseDto: UpdateCourseDto): Promise<Course>;
+  delete(id: string): Promise<Course>;
+  findById(id: string): Promise<Course | null>;
+  findOrFailById(id: string): Promise<Course>;
+  findAll(): Promise<Course[]>;
+}
+
 @Injectable()
-export class CourseRepo {
+export class CourseRepo implements ICourseRepo {
   public constructor(
     @InjectRepository(Course)
     private readonly repository: Repository<Course>,
@@ -15,13 +27,21 @@ export class CourseRepo {
 
   create(createCourseDto: CreateCourseDto) {
     const course = this.repository.create(createCourseDto);
-    return this.repository.save(course);
+    try {
+      return this.repository.save(course);
+    } catch (err) {
+      throw new RepositoryUnknownError(err.message, CourseRepo.name);
+    }
   }
 
   async update(id: string, updateCourseDto: UpdateCourseDto) {
     let course = await this.findOrFailById(id);
     const updated = this.repository.merge(course, updateCourseDto);
-    course = await this.repository.save(updated);
+    try {
+      course = await this.repository.save(updated);
+    } catch (err) {
+      throw new RepositoryUnknownError(err.message, CourseRepo.name);
+    }
     return course;
   }
 
@@ -50,8 +70,12 @@ export class CourseRepo {
 
   async delete(id: string) {
     const course = await this.findOrFailById(id);
-    const tmp = {...course}
-    await this.repository.remove(course);
+    const tmp = { ...course };
+    try {
+      await this.repository.remove(course);
+    } catch (err) {
+      throw new RepositoryUnknownError(err.message, CourseRepo.name);
+    }
     return tmp;
   }
 }

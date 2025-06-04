@@ -11,6 +11,8 @@ import { CourseLesson } from 'src/modules/lessons/entities/course-lesson.entity'
 import { Payment } from 'src/modules/payments/entities/payment.entity';
 import { User } from 'src/modules/users/entities/user.entity';
 import { UserProfile } from 'src/modules/users/entities/user-profile.entity';
+import { ConfigModule, ConfigService } from '@nestjs/config';
+import { getTestingDatabaseConfig } from 'src/common/utils/utils';
 
 describe('CourseRepo (integration)', () => {
   let module: TestingModule;
@@ -20,13 +22,24 @@ describe('CourseRepo (integration)', () => {
   beforeAll(async () => {
     module = await Test.createTestingModule({
       imports: [
-        TypeOrmModule.forRoot({
-          type: 'sqlite',
-          database: ':memory:',
-          entities: [Course, CourseLesson, Payment, User, UserProfile],
-          synchronize: true,
+        ConfigModule.forRoot({
+          isGlobal: true,
+          load: [],
+          envFilePath: '.env.test',
         }),
-        TypeOrmModule.forFeature([Course]),
+        TypeOrmModule.forRootAsync({
+          imports: [ConfigModule],
+          inject: [ConfigService],
+          useFactory: (configService: ConfigService) =>
+            getTestingDatabaseConfig(configService) as any,
+        }),
+        TypeOrmModule.forFeature([
+          User,
+          UserProfile,
+          Payment,
+          Course,
+          CourseLesson,
+        ]),
       ],
       providers: [CourseRepo],
     }).compile();
@@ -44,7 +57,7 @@ describe('CourseRepo (integration)', () => {
       name: 'Test Course',
       date_start: '2025-01-01T18:37:00',
       date_finish: '2025-01-01T18:37:00',
-      price: 100
+      price: 100,
     };
 
     const course = await courseRepo.create(dto);
@@ -63,7 +76,7 @@ describe('CourseRepo (integration)', () => {
       name: 'Another Course',
       date_start: '2025-01-01T18:37:00',
       date_finish: '2025-01-01T18:37:00',
-      price: 100
+      price: 100,
     };
     const created = await courseRepo.create(dto);
     const found = await courseRepo.findById(created.id);
@@ -76,7 +89,7 @@ describe('CourseRepo (integration)', () => {
       name: 'Update Me',
       date_start: '2025-01-01T18:37:00',
       date_finish: '2025-01-01T18:37:00',
-      price: 100
+      price: 100,
     };
     const created = await courseRepo.create(dto);
 
@@ -93,7 +106,7 @@ describe('CourseRepo (integration)', () => {
       name: 'Delete Me',
       date_start: '2025-01-01T18:37:00',
       date_finish: '2025-01-01T18:37:00',
-      price: 100
+      price: 100,
     };
     const created = await courseRepo.create(dto);
     const deleted = await courseRepo.delete(created.id);

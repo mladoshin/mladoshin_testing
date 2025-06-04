@@ -4,9 +4,64 @@ import { CoursesService } from 'src/modules/courses/courses.service';
 import { CreateCourseDto } from 'src/modules/courses/dto/create-course.dto';
 import { UpdateCourseDto } from 'src/modules/courses/dto/update-course.dto';
 
+// Команда для покупки курса пользователем (только если уже зарегистрировался)
+// pnpm run console course:purchase -u fe045e65-5d45-4165-925d-a48c809779e9 -c d279f85c-9eda-469c-9e26-de79dce92638
+@Command({ name: 'course:purchase', description: 'Оплатить курс пользователем' })
+export class PurchaseCourseCommand extends CommandRunner {
+  constructor(@Inject(CoursesService) private readonly coursesService: CoursesService) {
+    super();
+  }
+
+  async run(passedParams: string[], options: Record<string, any>): Promise<void> {
+    const payment = await this.coursesService.purchaseCourse(
+      options.user,
+      options.course,
+    );
+    console.log('Оплата прошла успешно:', payment);
+  }
+
+  @Option({ flags: '-u, --user <userId>', description: 'ID пользователя' })
+  parseUser(val: string): string {
+    return val;
+  }
+
+  @Option({ flags: '-c, --course <courseId>', description: 'ID курса' })
+  parseCourse(val: string): string {
+    return val;
+  }
+}
+
+// Команда для регистрации на курс пользователя
+// pnpm run console course:register -u fe045e65-5d45-4165-925d-a48c809779e9 -c d279f85c-9eda-469c-9e26-de79dce92638
+@Command({ name: 'course:register', description: 'Зарегистрировать на курс пользователя' })
+export class RegisterCourseCommand extends CommandRunner {
+  constructor(@Inject(CoursesService) private readonly coursesService: CoursesService) {
+    super();
+  }
+
+  async run(passedParams: string[], options: Record<string, any>): Promise<void> {
+    const courseEnrollment = await this.coursesService.registerUser(
+      options.user,
+      options.course,
+    );
+    console.log('Регистрация прошла успешно:', courseEnrollment);
+  }
+
+  @Option({ flags: '-u, --user <userId>', description: 'ID пользователя' })
+  parseUser(val: string): string {
+    return val;
+  }
+
+  @Option({ flags: '-c, --course <courseId>', description: 'ID курса' })
+  parseCourse(val: string): string {
+    return val;
+  }
+}
+
+// pnpm run console course:create --name "Курс 2" --price 100 --start "2025-01-01" --finish "2025-01-10"
 @Command({ name: 'course:create', description: 'Создать новый курс' })
 export class CreateCourseCommand extends CommandRunner {
-  constructor(private readonly coursesService: CoursesService) {
+  constructor(@Inject(CoursesService) private readonly coursesService: CoursesService) {
     super();
   }
 

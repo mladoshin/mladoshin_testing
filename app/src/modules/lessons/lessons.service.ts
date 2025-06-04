@@ -6,15 +6,23 @@ import {
 } from '@nestjs/common';
 import { CreateLessonDto } from './dto/create-lesson.dto';
 import { UpdateLessonDto } from './dto/update-lesson.dto';
-import { CourseLessonRepo } from './lessons.repository';
+import { ICourseLessonRepo } from './lessons.repository';
 import { RepositoryNotFoundError } from 'src/common/errors/db-errors';
 import { CourseLesson } from './entities/course-lesson.entity';
 
+export interface ILessonsService {
+  create(createLessonDto: CreateLessonDto): Promise<CourseLesson>;
+  findAll(): Promise<CourseLesson[]>;
+  findOne(id: string): Promise<CourseLesson>;
+  update(id: string, updateLessonDto: UpdateLessonDto): Promise<CourseLesson>;
+  remove(id: string): Promise<CourseLesson>;
+}
+
 @Injectable()
-export class LessonsService {
+export class LessonsService implements ILessonsService{
   constructor(
-    @Inject(CourseLessonRepo)
-    private readonly courseLessonRepository: CourseLessonRepo,
+    @Inject('ICourseLessonRepo')
+    private readonly courseLessonRepository: ICourseLessonRepo,
   ) {}
 
   create(createLessonDto: CreateLessonDto): Promise<CourseLesson> {

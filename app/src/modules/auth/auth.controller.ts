@@ -3,14 +3,11 @@ import {
   Get,
   Post,
   Body,
-  Patch,
-  Param,
-  Delete,
   Res,
-  Req,
   UseGuards,
+  Inject,
 } from '@nestjs/common';
-import { AuthService } from './auth.service';
+import { IAuthService } from './auth.service';
 import { LoginUserDto } from './dto/login.dto';
 import { RegisterUserDto } from './dto/register.dto';
 import { AuthResponse } from './dto/auth-response.dto';
@@ -19,12 +16,16 @@ import { TokenPair } from 'src/common/services/TokenService';
 import { JwtAuthGuard } from './guards/AuthGuard';
 import { User } from './decorators/UserDecorator';
 import { UserResponse } from '../users/dto/user-response.dto';
+import { AccessLog } from 'src/common/logging/access-log.decorator';
 
 @Controller('auth')
 export class AuthController {
-  constructor(private readonly authService: AuthService) {}
+  constructor(
+    @Inject('IAuthService') private readonly authService: IAuthService,
+  ) {}
 
   @Post('login')
+  @AccessLog()
   async login(
     @Body() loginUserDto: LoginUserDto,
     @Res({ passthrough: true }) res: Response,
@@ -34,12 +35,14 @@ export class AuthController {
   }
 
   @Get('check')
+  @AccessLog()
   async checkUserByEmail(@Body() data: any) {
     const result = await this.authService.check(data.email as string);
     return { result };
   }
 
   @Get('me')
+  @AccessLog()
   @UseGuards(JwtAuthGuard)
   async getMe(@User('id') uid: string) {
     const user = await this.authService.getMe(uid);
@@ -47,6 +50,7 @@ export class AuthController {
   }
 
   @Post('register')
+  @AccessLog()
   async register(
     @Body() registerUserDto: RegisterUserDto,
     @Res({ passthrough: true }) res: Response,
@@ -56,6 +60,7 @@ export class AuthController {
   }
 
   @Post('logout')
+  @AccessLog()
   logout(@Res({ passthrough: true }) res: Response): AuthResponse {
     const tokenPair: TokenPair = { accessToken: '', refreshToken: '' };
     return AuthResponse.make(tokenPair, res);

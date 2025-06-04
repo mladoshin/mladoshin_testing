@@ -6,14 +6,23 @@ import {
 } from '@nestjs/common';
 import { CreatePaymentDto } from './dto/create-payment.dto';
 import { UpdatePaymentDto } from './dto/update-payment.dto';
-import { PaymentRepo } from './payments.repository';
+import { IPaymentRepo } from './payments.repository';
 import { RepositoryNotFoundError } from 'src/common/errors/db-errors';
-import { PaymentResponse } from './dto/payment-response.dto';
 import { Payment } from './entities/payment.entity';
 
+export interface IPaymentsService {
+  create(createPaymentDto: CreatePaymentDto): Promise<Payment>;
+  findAll(): Promise<Payment[]>;
+  findOne(id: string): Promise<Payment>;
+  update(id: string, updatePaymentDto: UpdatePaymentDto): Promise<Payment>;
+  remove(id: string): Promise<Payment>;
+}
+
 @Injectable()
-export class PaymentsService {
-  public constructor(@Inject(PaymentRepo) private readonly paymentRepository: PaymentRepo) {}
+export class PaymentsService implements IPaymentsService{
+  public constructor(
+    @Inject('IPaymentRepo') private readonly paymentRepository: IPaymentRepo,
+  ) {}
 
   create(createPaymentDto: CreatePaymentDto): Promise<Payment> {
     return this.paymentRepository.create(createPaymentDto);
@@ -26,8 +35,7 @@ export class PaymentsService {
   findOne(id: string): Promise<Payment> {
     try {
       return this.paymentRepository.findOrFailById(id);
-    }
- catch (err) {
+    } catch (err) {
       if (err instanceof RepositoryNotFoundError) {
         throw new NotFoundException(err.message);
       }
@@ -38,8 +46,7 @@ export class PaymentsService {
   update(id: string, updatePaymentDto: UpdatePaymentDto): Promise<Payment> {
     try {
       return this.paymentRepository.update(id, updatePaymentDto);
-    }
- catch (err) {
+    } catch (err) {
       if (err instanceof RepositoryNotFoundError) {
         throw new NotFoundException(err.message);
       }
@@ -50,8 +57,7 @@ export class PaymentsService {
   remove(id: string): Promise<Payment> {
     try {
       return this.paymentRepository.delete(id);
-    }
- catch (err) {
+    } catch (err) {
       if (err instanceof RepositoryNotFoundError) {
         throw new NotFoundException(err.message);
       }

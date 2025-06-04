@@ -1,14 +1,20 @@
-import { Injectable, CanActivate, ExecutionContext } from '@nestjs/common';
+import {
+  Injectable,
+  CanActivate,
+  ExecutionContext,
+  Inject,
+} from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
-import { TokenService } from 'src/common/services/TokenService';
+import { ITokenService, TokenService } from 'src/common/services/TokenService';
 import { UserRole } from 'src/modules/users/entities/user.entity';
 
-export type JWTPayload = {email: string, id: string, role: UserRole}
+export type JWTPayload = { email: string; id: string; role: UserRole };
 
 @Injectable()
 export class JwtAuthGuard implements CanActivate {
   constructor(
-    private tokenService: TokenService,
+    @Inject('ITokenService')
+    private tokenService: ITokenService,
     private configService: ConfigService,
   ) {}
 

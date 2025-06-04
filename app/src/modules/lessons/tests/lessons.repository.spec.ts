@@ -10,6 +10,8 @@ import { UpdateLessonDto } from '../dto/update-lesson.dto';
 import { Payment } from 'src/modules/payments/entities/payment.entity';
 import { UserProfile } from 'src/modules/users/entities/user-profile.entity';
 import { User } from 'src/modules/users/entities/user.entity';
+import { getTestingDatabaseConfig } from 'src/common/utils/utils';
+import { ConfigModule, ConfigService } from '@nestjs/config';
 
 describe('CourseLessonRepo', () => {
   let repo: CourseLessonRepo;
@@ -19,14 +21,24 @@ describe('CourseLessonRepo', () => {
   beforeAll(async () => {
     const module: TestingModule = await Test.createTestingModule({
       imports: [
-        TypeOrmModule.forRoot({
-          type: 'sqlite',
-          database: ':memory:',
-          dropSchema: true,
-          entities: [CourseLesson, Course, Payment, User, UserProfile],
-          synchronize: true,
+        ConfigModule.forRoot({
+          isGlobal: true,
+          load: [],
+          envFilePath: '.env.test',
         }),
-        TypeOrmModule.forFeature([CourseLesson, Course, Payment]),
+        TypeOrmModule.forRootAsync({
+          imports: [ConfigModule],
+          inject: [ConfigService],
+          useFactory: (configService: ConfigService) =>
+            getTestingDatabaseConfig(configService) as any,
+        }),
+        TypeOrmModule.forFeature([
+          User,
+          UserProfile,
+          Payment,
+          Course,
+          CourseLesson,
+        ]),
       ],
       providers: [CourseLessonRepo],
     }).compile();
@@ -39,7 +51,7 @@ describe('CourseLessonRepo', () => {
       name: 'Test Course',
       date_start: '2025-01-01T18:37:00',
       date_finish: '2025-01-01T18:37:00',
-      price: 100
+      price: 100,
     });
     await courseRepo.save(course);
   });
@@ -49,7 +61,7 @@ describe('CourseLessonRepo', () => {
       title: 'Lesson 1',
       content: 'Lesson content',
       course_id: course.id,
-      date: '2025-01-01'
+      date: '2025-01-01',
     };
 
     const lesson = await repo.create(dto);
@@ -65,7 +77,7 @@ describe('CourseLessonRepo', () => {
       title: 'Lesson 2',
       content: 'More content',
       course_id: course.id,
-      date: '2025-01-01'
+      date: '2025-01-01',
     };
 
     const created = await repo.create(dto);
@@ -78,7 +90,7 @@ describe('CourseLessonRepo', () => {
       title: 'Original',
       content: 'Old content',
       course_id: course.id,
-      date: '2025-01-01'
+      date: '2025-01-01',
     });
 
     const updated = await repo.update(lesson.id, {
@@ -94,7 +106,7 @@ describe('CourseLessonRepo', () => {
       title: 'To Delete',
       content: 'Will be gone',
       course_id: course.id,
-      date: '2025-01-01'
+      date: '2025-01-01',
     });
 
     await repo.delete(lesson.id);
@@ -103,7 +115,7 @@ describe('CourseLessonRepo', () => {
   });
 
   it('should throw if lesson not found', async () => {
-    await expect(repo.findOrFailById('non-existent-id')).rejects.toThrow(
+    await expect(repo.findOrFailById('18dadbe2-2312-4eaa-9889-aab4b28c28c9')).rejects.toThrow(
       'Урок не найден.',
     );
   });

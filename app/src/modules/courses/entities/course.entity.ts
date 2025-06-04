@@ -1,6 +1,7 @@
 import { Column, Entity, OneToMany, PrimaryGeneratedColumn } from 'typeorm';
 import { CourseLesson } from '../../lessons/entities/course-lesson.entity';
 import { Payment } from 'src/modules/payments/entities/payment.entity';
+import { CourseEnrollment } from 'src/modules/course-enrollments/entities/course-enrollment.entity';
 
 @Entity('course')
 export class Course {
@@ -14,18 +15,24 @@ export class Course {
   name: string;
 
   @Column({
-    type: process.env.NODE_ENV === 'test' ? 'datetime' : 'timestamptz',
+    type: 'timestamptz',
   })
   date_start: string;
 
   @Column({
-    type: process.env.NODE_ENV === 'test' ? 'datetime' : 'timestamptz',
+    type: 'timestamptz',
   })
   date_finish: string;
 
   @OneToMany(() => CourseLesson, (lesson) => lesson.course)
-  lessons: CourseLesson[];
+  lessons?: CourseLesson[];
 
   @OneToMany(() => Payment, (payment) => payment.course)
-  payments: Payment[];
+  payments?: Payment[];
+
+  @OneToMany(
+    () => CourseEnrollment,
+    (courseEnrollment) => courseEnrollment.course,
+  )
+  courseEnrollments?: CourseEnrollment[];
 }

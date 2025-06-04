@@ -8,7 +8,10 @@ import { CourseLessonRepo } from './lessons.repository';
 @Module({
   imports: [TypeOrmModule.forFeature([CourseLesson])],
   controllers: [LessonsController],
-  providers: [LessonsService, CourseLessonRepo],
-  exports: [CourseLessonRepo, LessonsService],
+  providers: [
+    { provide: 'ILessonsService', useClass: LessonsService },
+    { provide: 'ICourseLessonRepo', useClass: CourseLessonRepo },
+  ],
+  exports: ['ICourseLessonRepo', 'ILessonsService'],
 })
 export class LessonsModule {}

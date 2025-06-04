@@ -1,30 +1,41 @@
 // lessons.controller.spec.ts
 import { Test, TestingModule } from '@nestjs/testing';
-import { LessonsController }   from '../lessons.controller';
-import { LessonsService }      from '../lessons.service';
-import { CreateLessonDto }     from '../dto/create-lesson.dto';
-import { UpdateLessonDto }     from '../dto/update-lesson.dto';
+import { LessonsController } from '../lessons.controller';
+import { ILessonsService, LessonsService } from '../lessons.service';
+import { CreateLessonDto } from '../dto/create-lesson.dto';
+import { UpdateLessonDto } from '../dto/update-lesson.dto';
 import { CourseLessonResponse } from '../dto/lesson-response.dto';
 import { CourseLesson } from '../entities/course-lesson.entity';
+import { IAppLoggerService } from 'src/common/logging/log.service';
 
 describe('LessonsController', () => {
   let controller: LessonsController;
-  let service: Partial<Record<keyof LessonsService, jest.Mock>>;
+  let service: Partial<Record<keyof ILessonsService, jest.Mock>>;
+  let mockLoggerService: Partial<Record<keyof IAppLoggerService, jest.Mock>>;
 
   beforeAll(async () => {
     // Create Jest mock functions for each service method
     service = {
-      create:  jest.fn(),
+      create: jest.fn(),
       findAll: jest.fn(),
       findOne: jest.fn(),
-      update:  jest.fn(),
-      remove:  jest.fn(),
+      update: jest.fn(),
+      remove: jest.fn(),
+    };
+
+    mockLoggerService = {
+      accessLog: jest.fn(),
+      error: jest.fn(),
+      log: jest.fn(),
+      warn: jest.fn(),
+      debug: jest.fn(),
     };
 
     const module: TestingModule = await Test.createTestingModule({
       controllers: [LessonsController],
       providers: [
-        { provide: LessonsService, useValue: service },
+        { provide: 'ILessonsService', useValue: service },
+        { provide: 'IAppLoggerService', useValue: mockLoggerService },
       ],
     }).compile();
 
@@ -42,7 +53,7 @@ describe('LessonsController', () => {
     title: 'Intro',
     content: 'Welcome to the course',
     date: '2025-01-01',
-    course: {} as any
+    course: {} as any,
   };
   const response = CourseLessonResponse.make(sampleLesson);
   const responseList = [response];
@@ -53,7 +64,7 @@ describe('LessonsController', () => {
         course_id: 'course-1',
         title: 'Intro',
         content: 'Welcome to the course',
-        date: '2025-01-01'
+        date: '2025-01-01',
       };
       service.create!.mockResolvedValue(sampleLesson);
 
@@ -90,7 +101,7 @@ describe('LessonsController', () => {
     it('should update a lesson and return CourseLessonResponse', async () => {
       const dto: UpdateLessonDto = {
         title: 'Introduction',
-        content: 'Updated content'
+        content: 'Updated content',
       };
       const updated = { ...sampleLesson, ...dto };
       service.update!.mockResolvedValue(updated);

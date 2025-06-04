@@ -6,17 +6,22 @@ import {
   Patch,
   Param,
   Delete,
+  Inject,
 } from '@nestjs/common';
-import { LessonsService } from './lessons.service';
+import { ILessonsService } from './lessons.service';
 import { CreateLessonDto } from './dto/create-lesson.dto';
 import { UpdateLessonDto } from './dto/update-lesson.dto';
 import { CourseLessonResponse } from './dto/lesson-response.dto';
+import { AccessLog } from 'src/common/logging/access-log.decorator';
 
 @Controller('lessons')
 export class LessonsController {
-  constructor(private readonly lessonsService: LessonsService) {}
+  constructor(
+    @Inject('ILessonsService') private readonly lessonsService: ILessonsService,
+  ) {}
 
   @Post()
+  @AccessLog()
   async create(
     @Body() createLessonDto: CreateLessonDto,
   ): Promise<CourseLessonResponse> {
@@ -25,18 +30,21 @@ export class LessonsController {
   }
 
   @Get()
+  @AccessLog()
   async findAll(): Promise<CourseLessonResponse[]> {
     const lessons = await this.lessonsService.findAll();
     return CourseLessonResponse.collection(lessons);
   }
 
   @Get(':id')
+  @AccessLog()
   async findOne(@Param('id') id: string): Promise<CourseLessonResponse> {
     const lesson = await this.lessonsService.findOne(id);
     return CourseLessonResponse.make(lesson);
   }
 
   @Patch(':id')
+  @AccessLog()
   async update(
     @Param('id') id: string,
     @Body() updateLessonDto: UpdateLessonDto,
@@ -46,6 +54,7 @@ export class LessonsController {
   }
 
   @Delete(':id')
+  @AccessLog()
   async remove(@Param('id') id: string): Promise<CourseLessonResponse> {
     const lesson = await this.lessonsService.remove(id);
     return CourseLessonResponse.make(lesson);

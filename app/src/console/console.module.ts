@@ -5,6 +5,8 @@ import {
   CreateCourseCommand,
   GetCourseCommand,
   ListCourseCommand,
+  PurchaseCourseCommand,
+  RegisterCourseCommand,
   RemoveCourseCommand,
   UpdateCourseCommand,
 } from './commands/course.commands';
@@ -59,6 +61,8 @@ import { CreatePaymentCommand, GetPaymentCommand, ListPaymentsCommand, RemovePay
     CreateCourseCommand,
     UpdateCourseCommand,
     RemoveCourseCommand,
+    PurchaseCourseCommand,
+    RegisterCourseCommand,
 
     //Lesson
     LessonCommands,

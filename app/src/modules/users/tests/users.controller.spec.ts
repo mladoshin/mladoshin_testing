@@ -1,15 +1,17 @@
 // users.controller.spec.ts
 import { Test, TestingModule } from '@nestjs/testing';
 import { UsersController } from '../users.controller';
-import { UsersService } from '../users.service';
+import { IUsersService, UsersService } from '../users.service';
 import { CreateUserDto } from '../dto/create-user.dto';
 import { UpdateUserDto } from '../dto/update-user.dto';
 import { UserResponse } from '../dto/user-response.dto';
 import { User, UserRole } from '../entities/user.entity';
+import { IAppLoggerService } from 'src/common/logging/log.service';
 
 describe('UsersController', () => {
   let controller: UsersController;
-  let service: Partial<Record<keyof UsersService, jest.Mock>>;
+  let service: Partial<Record<keyof IUsersService, jest.Mock>>;
+  let mockLoggerService: Partial<Record<keyof IAppLoggerService, jest.Mock>>;
 
   beforeAll(async () => {
     // Mock each service method
@@ -21,9 +23,20 @@ describe('UsersController', () => {
       remove: jest.fn(),
     };
 
+    mockLoggerService = {
+      accessLog: jest.fn(),
+      error: jest.fn(),
+      log: jest.fn(),
+      warn: jest.fn(),
+      debug: jest.fn(),
+    };
+
     const module: TestingModule = await Test.createTestingModule({
       controllers: [UsersController],
-      providers: [{ provide: UsersService, useValue: service }],
+      providers: [
+        { provide: 'IUsersService', useValue: service },
+        { provide: 'IAppLoggerService', useValue: mockLoggerService },
+      ],
     }).compile();
 
     controller = module.get<UsersController>(UsersController);

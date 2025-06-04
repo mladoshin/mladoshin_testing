@@ -14,8 +14,8 @@ export class Payment {
   id: string;
 
   @Column({
-    type: process.env.NODE_ENV === 'test' ? 'datetime' : 'timestamptz',
-    default: () => process.env.NODE_ENV === 'test' ? "CURRENT_TIMESTAMP" : "now()",
+    type: 'timestamptz',
+    default: () => 'now()',
   })
   timestamp: string;
 

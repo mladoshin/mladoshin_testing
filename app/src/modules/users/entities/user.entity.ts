@@ -8,6 +8,7 @@ import {
 } from 'typeorm';
 import { UserProfile } from './user-profile.entity';
 import { Payment } from 'src/modules/payments/entities/payment.entity';
+import { CourseEnrollment } from 'src/modules/course-enrollments/entities/course-enrollment.entity';
 
 export enum UserRole {
   USER = 'user',
@@ -40,5 +41,8 @@ export class User {
   // profile_id: string;
 
   @OneToMany(() => Payment, (payment) => payment.user)
-  payments: Payment[];
+  payments?: Payment[];
+
+  @OneToMany(() => CourseEnrollment, (courseEnrollment) => courseEnrollment.user)
+  courseEnrollments?: CourseEnrollment[];
 }

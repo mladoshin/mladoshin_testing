@@ -6,17 +6,23 @@ import {
   Patch,
   Param,
   Delete,
+  Inject,
 } from '@nestjs/common';
-import { PaymentsService } from './payments.service';
+import { IPaymentsService } from './payments.service';
 import { CreatePaymentDto } from './dto/create-payment.dto';
 import { UpdatePaymentDto } from './dto/update-payment.dto';
 import { PaymentResponse } from './dto/payment-response.dto';
+import { AccessLog } from 'src/common/logging/access-log.decorator';
 
 @Controller('payments')
 export class PaymentsController {
-  constructor(private readonly paymentsService: PaymentsService) {}
+  constructor(
+    @Inject('IPaymentsService')
+    private readonly paymentsService: IPaymentsService,
+  ) {}
 
   @Post()
+  @AccessLog()
   async create(
     @Body() createPaymentDto: CreatePaymentDto,
   ): Promise<PaymentResponse> {
@@ -25,18 +31,21 @@ export class PaymentsController {
   }
 
   @Get()
+  @AccessLog()
   async findAll(): Promise<PaymentResponse[]> {
     const payments = await this.paymentsService.findAll();
     return PaymentResponse.collection(payments);
   }
 
   @Get(':id')
+  @AccessLog()
   async findOne(@Param('id') id: string): Promise<PaymentResponse> {
     const payment = await this.paymentsService.findOne(id);
     return PaymentResponse.make(payment);
   }
 
   @Patch(':id')
+  @AccessLog()
   async update(
     @Param('id') id: string,
     @Body() updatePaymentDto: UpdatePaymentDto,
@@ -46,6 +55,7 @@ export class PaymentsController {
   }
 
   @Delete(':id')
+  @AccessLog()
   async remove(@Param('id') id: string): Promise<PaymentResponse> {
     const payment = await this.paymentsService.remove(id);
     return PaymentResponse.make(payment);

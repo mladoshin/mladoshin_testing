@@ -9,6 +9,8 @@ import { UserProfile } from 'src/modules/users/entities/user-profile.entity';
 import { CourseLesson } from 'src/modules/lessons/entities/course-lesson.entity';
 import { PaymentRepo } from '../payments.repository';
 import { CreatePaymentDto } from '../dto/create-payment.dto';
+import { getTestingDatabaseConfig } from 'src/common/utils/utils';
+import { ConfigModule, ConfigService } from '@nestjs/config';
 
 describe('PaymentRepo', () => {
   let paymentRepo: PaymentRepo;
@@ -21,13 +23,24 @@ describe('PaymentRepo', () => {
   beforeEach(async () => {
     const module: TestingModule = await Test.createTestingModule({
       imports: [
-        TypeOrmModule.forRoot({
-          type: 'sqlite',
-          database: ':memory:',
-          synchronize: true,
-          entities: [Payment, User, Course, UserProfile, CourseLesson],
+        ConfigModule.forRoot({
+          isGlobal: true, // optional if you want global access
+          load: [], // optionally load config functions
+          envFilePath: '.env.test', // if needed
         }),
-        TypeOrmModule.forFeature([Payment, User, Course]),
+        TypeOrmModule.forRootAsync({
+          imports: [ConfigModule],
+          inject: [ConfigService],
+          useFactory: (configService: ConfigService) =>
+            getTestingDatabaseConfig(configService) as any,
+        }),
+        TypeOrmModule.forFeature([
+          User,
+          UserProfile,
+          Payment,
+          Course,
+          CourseLesson,
+        ]),
       ],
       providers: [PaymentRepo],
     }).compile();
@@ -54,7 +67,7 @@ describe('PaymentRepo', () => {
 
     // Create mock course
     const course = courseRepository.create({
-        name: 'Test Course',
+      name: 'Test Course',
       price: 100,
       date_finish: '2025-01-01T18:37:00',
       date_start: '2025-01-01T18:37:00',
@@ -71,8 +84,8 @@ describe('PaymentRepo', () => {
   it('should create a payment successfully', async () => {
     const createPaymentDto: CreatePaymentDto = {
       amount: 100,
-      user_id: userId, // Use actual user ID here
-      course_id: courseId, // Use actual course ID here
+      userId,
+      courseId,
     };
 
     // Save to DB
@@ -87,28 +100,27 @@ describe('PaymentRepo', () => {
   it('should find a payment by user and course', async () => {
     const createPaymentDto: CreatePaymentDto = {
       amount: 100,
-      user_id: userId, // Use actual user ID here
-      course_id: courseId, // Use actual course ID here
+      userId,
+      courseId,
     };
 
     // Save to DB
     const savedPayment = await paymentRepo.create(createPaymentDto);
 
     // Fetch payment by user_id and course_id
-    const foundPayment = await paymentRepo.findByUserIdAndCourseId(
+    const foundPayment = await paymentRepo.findByUserAndCourse(
       userId,
       courseId,
     );
     expect(foundPayment?.id).toEqual(savedPayment.id);
     expect(foundPayment?.course_id).toEqual(savedPayment.course_id);
     expect(foundPayment?.user_id).toEqual(savedPayment.user_id);
-
   });
 
   it('should fail to find a payment by invalid user and course', async () => {
-    const foundPayment = await paymentRepo.findByUserIdAndCourseId(
-      'invalid-id',
-      'invalid-course-id',
+    const foundPayment = await paymentRepo.findByUserAndCourse(
+      '18dadbe2-2312-4eaa-9889-aab4b28c28c9',
+      '18dadbe2-2312-4eaa-9889-aab4b28c28c9',
     );
     expect(foundPayment).toBeNull();
   });
@@ -116,8 +128,8 @@ describe('PaymentRepo', () => {
   it('should delete a payment successfully', async () => {
     const createPaymentDto: CreatePaymentDto = {
       amount: 100,
-      user_id: userId, // Use actual user ID here
-      course_id: courseId, // Use actual course ID here
+      userId,
+      courseId,
     };
 
     // Save to DB
@@ -125,7 +137,7 @@ describe('PaymentRepo', () => {
 
     // Delete the payment
     const deletedPayment = await paymentRepo.delete(savedPayment.id);
-    console.log(deletedPayment)
+    console.log(deletedPayment);
 
     expect(deletedPayment).toHaveProperty('id');
     expect(deletedPayment.id).toBe(savedPayment.id);
@@ -134,7 +146,7 @@ describe('PaymentRepo', () => {
   afterEach(async () => {
     // Cleanup DB after each test
     await dataSource.query('DELETE FROM payment');
-    await dataSource.query('DELETE FROM user');
+    await dataSource.query('DELETE FROM "user"');
     await dataSource.query('DELETE FROM course');
   });
 });

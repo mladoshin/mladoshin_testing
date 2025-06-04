@@ -9,6 +9,8 @@ import { UpdateUserDto } from '../dto/update-user.dto';
 import { Payment } from 'src/modules/payments/entities/payment.entity';
 import { Course } from 'src/modules/courses/entities/course.entity';
 import { CourseLesson } from 'src/modules/lessons/entities/course-lesson.entity';
+import { ConfigModule, ConfigService } from '@nestjs/config';
+import { getTestingDatabaseConfig } from 'src/common/utils/utils';
 
 describe('UserRepo Integration Tests', () => {
   let userRepo: UserRepo;
@@ -16,16 +18,24 @@ describe('UserRepo Integration Tests', () => {
   beforeAll(async () => {
     const module: TestingModule = await Test.createTestingModule({
       imports: [
-        TypeOrmModule.forRoot({
-          type: 'sqlite',
-          database: ':memory:',
-          entities: [User, UserProfile, Payment, Course, CourseLesson],
-          synchronize: true,
-          extra: {
-            pragma: 'foreign_keys=ON',
-          },
+        ConfigModule.forRoot({
+          isGlobal: true, // optional if you want global access
+          load: [], // optionally load config functions
+          envFilePath: '.env.test', // if needed
         }),
-        TypeOrmModule.forFeature([User, UserProfile, Payment, Course, CourseLesson]),
+        TypeOrmModule.forRootAsync({
+          imports: [ConfigModule],
+          inject: [ConfigService],
+          useFactory: (configService: ConfigService) =>
+            getTestingDatabaseConfig(configService) as any,
+        }),
+        TypeOrmModule.forFeature([
+          User,
+          UserProfile,
+          Payment,
+          Course,
+          CourseLesson,
+        ]),
       ],
       providers: [UserRepo],
     }).compile();

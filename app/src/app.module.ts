@@ -11,6 +11,9 @@ import { ConfigModule, ConfigService } from '@nestjs/config';
 import { BcryptService } from './common/services/HashService';
 import { TokenService } from './common/services/TokenService';
 import { CourseCommands, ListCourseCommand } from './console/commands/course.commands';
+import { AppLoggerService } from './common/logging/log.service';
+import { ErrorLoggerInterceptor } from './common/logging/error-logger.interceptor';
+import { AppLoggerModule } from './common/logging/log.module';
 
 @Module({
   imports: [
@@ -34,8 +37,9 @@ import { CourseCommands, ListCourseCommand } from './console/commands/course.com
     CoursesModule,
     PaymentsModule,
     LessonsModule,
+    AppLoggerModule
   ],
   controllers: [AppController],
-  providers: [AppService, BcryptService, TokenService],
+  providers: [AppService, BcryptService, TokenService, ErrorLoggerInterceptor],
 })
 export class AppModule {}

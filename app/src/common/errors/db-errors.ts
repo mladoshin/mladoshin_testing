@@ -7,3 +7,5 @@ export class RepositoryError extends Error {
 }
 
 export class RepositoryNotFoundError extends RepositoryError {}
+export class RepositoryDuplicateError extends RepositoryError {}
+export class RepositoryUnknownError extends RepositoryError {}

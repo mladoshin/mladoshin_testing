@@ -1,30 +1,41 @@
 import { Test, TestingModule } from '@nestjs/testing';
-import { AuthController } from './auth.controller';
-import { AuthService } from './auth.service';
+import { AuthController } from '../auth.controller';
+import { AuthService, IAuthService } from '../auth.service';
 import { TokenPair, TokenService } from 'src/common/services/TokenService';
-import { ConflictException, NotFoundException, UnauthorizedException } from '@nestjs/common';
+import {
+  ConflictException,
+  NotFoundException,
+  UnauthorizedException,
+} from '@nestjs/common';
 import { ConfigModule } from '@nestjs/config';
-import { LoginUserDto } from './dto/login.dto';
-import { RegisterUserDto } from './dto/register.dto';
-import { register } from 'module';
-import { UserResponse } from '../users/dto/user-response.dto';
-import { User } from '../users/entities/user.entity';
-
-const tokenPair: TokenPair = {
-  accessToken:
-    'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpZCI6ImM3M2RlYTYwLTdmZDYtNDViMS04OWVhLTM1NzJjYWNmZDlkNiIsImVtYWlsIjoibWxhZG9zaGluQG1haWwucnUiLCJyb2xlIjoidXNlciIsImlhdCI6MTc0NjYwNzEyNiwiZXhwIjoxNzQ2NjkzNTI2fQ.QQi-r3LAFWu2rdKI9bqnEGjPS2gnKdh9xzBlJyazsr8',
-  refreshToken:
-    'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpZCI6ImM3M2RlYTYwLTdmZDYtNDViMS04OWVhLTM1NzJjYWNmZDlkNiIsImVtYWlsIjoibWxhZG9zaGluQG1haWwucnUiLCJyb2xlIjoidXNlciIsImlhdCI6MTc0NjYwNzEyNiwiZXhwIjoxNzYyMTU5MTI2fQ._H7ZAdiCDuzrEh2wS8i2-O2JPWE4t44gPcI1T-86ans',
-};
+import { LoginUserDto } from '../dto/login.dto';
+import { RegisterUserDto } from '../dto/register.dto';
+import { UserResponse } from '../../users/dto/user-response.dto';
+import { User } from '../../users/entities/user.entity';
+import {
+  IAppLoggerService,
+} from 'src/common/logging/log.service';
 
 describe('AuthController', () => {
   let controller: AuthController;
-  const mockAuthService = {
-    login: jest.fn(),
-    register: jest.fn(),
+  let mockAuthService: Partial<Record<keyof IAuthService, jest.Mock>>;
+  let mockLoggerService: Partial<Record<keyof IAppLoggerService, jest.Mock>>;
+
+  mockAuthService = {
+    check: jest.fn(),
+    createTokenPair: jest.fn(),
     getMe: jest.fn(),
+    login: jest.fn(),
     logout: jest.fn(),
-    check: jest.fn()
+    register: jest.fn(),
+  };
+
+  mockLoggerService = {
+    accessLog: jest.fn(),
+    error: jest.fn(),
+    log: jest.fn(),
+    warn: jest.fn(),
+    debug: jest.fn(),
   };
 
   beforeEach(async () => {
@@ -32,8 +43,9 @@ describe('AuthController', () => {
       imports: [ConfigModule],
       controllers: [AuthController],
       providers: [
-        { provide: AuthService, useValue: mockAuthService },
-        TokenService,
+        { provide: 'IAuthService', useValue: mockAuthService },
+        { provide: 'ITokenService', useClass: TokenService },
+        { provide: 'IAppLoggerService', useValue: mockLoggerService },
       ],
     }).compile();
 
@@ -47,7 +59,7 @@ describe('AuthController', () => {
   it('login_success', async () => {
     // Arrange
     const dto = { email: 'a@b.com', password: 'pw' };
-    mockAuthService.login.mockResolvedValue({
+    mockAuthService.login?.mockResolvedValue({
       accessToken: 'AT',
       refreshToken: 'RT',
     });
@@ -100,7 +112,7 @@ describe('AuthController', () => {
       last_name: 'ln',
     };
 
-    mockAuthService.register.mockResolvedValue({
+    mockAuthService.register?.mockResolvedValue({
       accessToken: 'AT',
       refreshToken: 'RT',
     });
@@ -135,7 +147,7 @@ describe('AuthController', () => {
       last_name: 'ln',
     };
 
-    mockAuthService.register.mockImplementation(() => {
+    mockAuthService.register?.mockImplementation(() => {
       throw new ConflictException();
     });
 
@@ -152,10 +164,15 @@ describe('AuthController', () => {
 
   it('get_me_success', async () => {
     // Arrange: fake user data
-    const fakeUser = { id: 'user-123', email: 'a@b.com', role: 'user', profile: {
-      first_name: "Maxim",
-      last_name: "Ladoshin"
-    } } as User;
+    const fakeUser = {
+      id: 'user-123',
+      email: 'a@b.com',
+      role: 'user',
+      profile: {
+        first_name: 'Maxim',
+        last_name: 'Ladoshin',
+      },
+    } as User;
     mockAuthService.getMe!.mockResolvedValue(fakeUser);
     // Act
     const result = await controller.getMe('user-123');
@@ -206,7 +223,7 @@ describe('AuthController', () => {
 
     // Act
     const result = await controller.checkUserByEmail('mladoshin@mail.ru');
-    expect(result).toEqual({result: true});
+    expect(result).toEqual({ result: true });
   });
 
   it('check_failure', async () => {
@@ -214,6 +231,6 @@ describe('AuthController', () => {
 
     // Act
     const result = await controller.checkUserByEmail('mladoshin@mail.ru');
-    expect(result).toEqual({result: false});
+    expect(result).toEqual({ result: false });
   });
 });

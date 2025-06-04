@@ -49,8 +49,8 @@ export class CreatePaymentCommand extends CommandRunner {
 
     const createPaymentDto: CreatePaymentDto = {
       amount,
-      user_id,
-      course_id,
+      userId: user_id,
+      courseId: course_id
     };
 
     try {

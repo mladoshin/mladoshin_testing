@@ -92,3 +92,10 @@
 ![бизнес логика](img/analysis/bl_da_erd.png)
 
 ![база данных](img/analysis/db_erd.png)
+
+## Команды
+
+### Создание пользователя:
+```
+npm run console -- user:create --email mladoshin@mail.ru --password 1234 --first-name Maxim --last-name Ladoshin
+```

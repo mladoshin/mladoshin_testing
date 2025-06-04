@@ -20,7 +20,7 @@ export class CourseLesson {
   content: string;
 
   @Column({
-    type: process.env.NODE_ENV === 'test' ? 'datetime' : 'timestamptz',
+    type: 'timestamptz',
   })
   date: string;
 
