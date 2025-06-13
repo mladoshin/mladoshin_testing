@@ -8,14 +8,14 @@ import { CreatePaymentDto } from './dto/create-payment.dto';
 import { UpdatePaymentDto } from './dto/update-payment.dto';
 import { IPaymentRepo } from './payments.repository';
 import { RepositoryNotFoundError } from 'src/common/errors/db-errors';
-import { Payment } from './entities/payment.entity';
+import { PaymentDomain } from './domains/payment.domain';
 
 export interface IPaymentsService {
-  create(createPaymentDto: CreatePaymentDto): Promise<Payment>;
-  findAll(): Promise<Payment[]>;
-  findOne(id: string): Promise<Payment>;
-  update(id: string, updatePaymentDto: UpdatePaymentDto): Promise<Payment>;
-  remove(id: string): Promise<Payment>;
+  create(createPaymentDto: CreatePaymentDto): Promise<PaymentDomain>;
+  findAll(): Promise<PaymentDomain[]>;
+  findOne(id: string): Promise<PaymentDomain>;
+  update(id: string, updatePaymentDto: UpdatePaymentDto): Promise<PaymentDomain>;
+  remove(id: string): Promise<PaymentDomain>;
 }
 
 @Injectable()
@@ -24,15 +24,15 @@ export class PaymentsService implements IPaymentsService{
     @Inject('IPaymentRepo') private readonly paymentRepository: IPaymentRepo,
   ) {}
 
-  create(createPaymentDto: CreatePaymentDto): Promise<Payment> {
+  create(createPaymentDto: CreatePaymentDto): Promise<PaymentDomain> {
     return this.paymentRepository.create(createPaymentDto);
   }
 
-  findAll(): Promise<Payment[]> {
+  findAll(): Promise<PaymentDomain[]> {
     return this.paymentRepository.findAll();
   }
 
-  findOne(id: string): Promise<Payment> {
+  findOne(id: string): Promise<PaymentDomain> {
     try {
       return this.paymentRepository.findOrFailById(id);
     } catch (err) {
@@ -43,7 +43,7 @@ export class PaymentsService implements IPaymentsService{
     }
   }
 
-  update(id: string, updatePaymentDto: UpdatePaymentDto): Promise<Payment> {
+  update(id: string, updatePaymentDto: UpdatePaymentDto): Promise<PaymentDomain> {
     try {
       return this.paymentRepository.update(id, updatePaymentDto);
     } catch (err) {
@@ -54,7 +54,7 @@ export class PaymentsService implements IPaymentsService{
     }
   }
 
-  remove(id: string): Promise<Payment> {
+  remove(id: string): Promise<PaymentDomain> {
     try {
       return this.paymentRepository.delete(id);
     } catch (err) {

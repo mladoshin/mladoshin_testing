@@ -9,13 +9,14 @@ import { UpdateLessonDto } from './dto/update-lesson.dto';
 import { ICourseLessonRepo } from './lessons.repository';
 import { RepositoryNotFoundError } from 'src/common/errors/db-errors';
 import { CourseLesson } from './entities/course-lesson.entity';
+import { CourseLessonDomain } from './domains/lesson.domain';
 
 export interface ILessonsService {
-  create(createLessonDto: CreateLessonDto): Promise<CourseLesson>;
-  findAll(): Promise<CourseLesson[]>;
-  findOne(id: string): Promise<CourseLesson>;
-  update(id: string, updateLessonDto: UpdateLessonDto): Promise<CourseLesson>;
-  remove(id: string): Promise<CourseLesson>;
+  create(createLessonDto: CreateLessonDto): Promise<CourseLessonDomain>;
+  findAll(): Promise<CourseLessonDomain[]>;
+  findOne(id: string): Promise<CourseLessonDomain>;
+  update(id: string, updateLessonDto: UpdateLessonDto): Promise<CourseLessonDomain>;
+  remove(id: string): Promise<CourseLessonDomain>;
 }
 
 @Injectable()
@@ -25,11 +26,11 @@ export class LessonsService implements ILessonsService{
     private readonly courseLessonRepository: ICourseLessonRepo,
   ) {}
 
-  create(createLessonDto: CreateLessonDto): Promise<CourseLesson> {
+  create(createLessonDto: CreateLessonDto): Promise<CourseLessonDomain> {
     return this.courseLessonRepository.create(createLessonDto);
   }
 
-  findAll(): Promise<CourseLesson[]> {
+  findAll(): Promise<CourseLessonDomain[]> {
     return this.courseLessonRepository.findAll();
   }
 
@@ -44,7 +45,7 @@ export class LessonsService implements ILessonsService{
     }
   }
 
-  update(id: string, updateLessonDto: UpdateLessonDto): Promise<CourseLesson> {
+  update(id: string, updateLessonDto: UpdateLessonDto): Promise<CourseLessonDomain> {
     try {
       return this.courseLessonRepository.update(id, updateLessonDto);
     } catch (err) {
@@ -55,7 +56,7 @@ export class LessonsService implements ILessonsService{
     }
   }
 
-  remove(id: string): Promise<CourseLesson> {
+  remove(id: string): Promise<CourseLessonDomain> {
     try {
       return this.courseLessonRepository.delete(id);
     } catch (err) {
