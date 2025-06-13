@@ -99,3 +99,6 @@
 ```
 npm run console -- user:create --email mladoshin@mail.ru --password 1234 --first-name Maxim --last-name Ladoshin
 ```
+
+### Обновленная UML диаграмма всех классов в программе
+![Обновленная UML диаграмма всех классов](img/analysis/uml_new.png)

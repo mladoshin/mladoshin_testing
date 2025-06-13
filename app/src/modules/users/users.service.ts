@@ -8,14 +8,14 @@ import { CreateUserDto } from './dto/create-user.dto';
 import { UpdateUserDto } from './dto/update-user.dto';
 import { IUserRepo } from './users.repository';
 import { RepositoryNotFoundError } from 'src/common/errors/db-errors';
-import { User } from './entities/user.entity';
+import { UserDomain } from './domains/user.domain';
 
 export interface IUsersService {
-  create(createUserDto: CreateUserDto): Promise<User>;
-  findAll(): Promise<User[]>;
-  findOne(id: string): Promise<User>;
-  update(id: string, updateUserDto: UpdateUserDto): Promise<User>;
-  remove(id: string): Promise<User>;
+  create(createUserDto: CreateUserDto): Promise<UserDomain>;
+  findAll(): Promise<UserDomain[]>;
+  findOne(id: string): Promise<UserDomain>;
+  update(id: string, updateUserDto: UpdateUserDto): Promise<UserDomain>;
+  remove(id: string): Promise<UserDomain>;
 }
 
 @Injectable()
@@ -24,15 +24,15 @@ export class UsersService implements IUsersService {
     @Inject('IUserRepo') private readonly userRepository: IUserRepo,
   ) {}
 
-  create(createUserDto: CreateUserDto): Promise<User> {
+  create(createUserDto: CreateUserDto): Promise<UserDomain> {
     return this.userRepository.create(createUserDto);
   }
 
-  findAll(): Promise<User[]> {
+  findAll(): Promise<UserDomain[]> {
     return this.userRepository.findAll();
   }
 
-  findOne(id: string): Promise<User> {
+  findOne(id: string): Promise<UserDomain> {
     try {
       return this.userRepository.findOrFailById(id);
     } catch (err) {
@@ -43,7 +43,7 @@ export class UsersService implements IUsersService {
     }
   }
 
-  update(id: string, updateUserDto: UpdateUserDto): Promise<User> {
+  update(id: string, updateUserDto: UpdateUserDto): Promise<UserDomain> {
     try {
       return this.userRepository.update(id, updateUserDto);
     } catch (err) {
@@ -54,7 +54,7 @@ export class UsersService implements IUsersService {
     }
   }
 
-  remove(id: string): Promise<User> {
+  remove(id: string): Promise<UserDomain> {
     try {
       return this.userRepository.delete(id);
     } catch (err) {

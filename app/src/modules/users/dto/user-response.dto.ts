@@ -27,7 +27,7 @@ export class UserResponse {
     return new UserResponse(user);
   }
 
-  static collection(users: User[]): UserResponse[] {
+  static collection(users: UserDomain[]): UserResponse[] {
     return users.map((user) => new UserResponse(user));
   }
 }
