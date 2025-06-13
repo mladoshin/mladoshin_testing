@@ -27,19 +27,23 @@ import {
 import { UserRole } from '../users/entities/user.entity';
 import { Payment } from '../payments/entities/payment.entity';
 import { CourseLesson } from '../lessons/entities/course-lesson.entity';
+import { PaymentDomain } from '../payments/domains/payment.domain';
+import { CourseLessonDomain } from '../lessons/domains/lesson.domain';
+import { CourseEnrollmentDomain } from '../course-enrollments/domains/course-enrollment.domain';
+import { CourseDomain } from './domains/course.domain';
 
 export interface ICoursesService {
-  create(createCourseDto: CreateCourseDto): Promise<Course>;
-  findAll(): Promise<Course[]>;
-  findOne(id: string): Promise<Course>;
-  update(id: string, updateCourseDto: UpdateCourseDto): Promise<Course>;
-  remove(id: string): Promise<Course>;
-  registerUser(userId: string, courseId: string): Promise<CourseEnrollment>;
-  findAllEnrollments(courseId: string): Promise<CourseEnrollment[]>;
-  findAllPayments(courseId: string): Promise<Payment[]>;
-  purchaseCourse(userId: string, courseId: string): Promise<Payment>;
+  create(createCourseDto: CreateCourseDto): Promise<CourseDomain>;
+  findAll(): Promise<CourseDomain[]>;
+  findOne(id: string): Promise<CourseDomain>;
+  update(id: string, updateCourseDto: UpdateCourseDto): Promise<CourseDomain>;
+  remove(id: string): Promise<CourseDomain>;
+  registerUser(userId: string, courseId: string): Promise<CourseEnrollmentDomain>;
+  findAllEnrollments(courseId: string): Promise<CourseEnrollmentDomain[]>;
+  findAllPayments(courseId: string): Promise<PaymentDomain[]>;
+  purchaseCourse(userId: string, courseId: string): Promise<PaymentDomain>;
   doesUserHaveAccess(user: JWTPayload, courseId: string): Promise<boolean>;
-  findAllLessons(user: JWTPayload, courseId: string): Promise<CourseLesson[]>;
+  findAllLessons(user: JWTPayload, courseId: string): Promise<CourseLessonDomain[]>;
 }
 
 @Injectable()

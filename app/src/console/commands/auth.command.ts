@@ -3,7 +3,7 @@ import { Injectable, Inject } from '@nestjs/common';
 import { plainToInstance } from 'class-transformer';
 import { validateOrReject } from 'class-validator';
 import { RegisterUserDto } from 'src/modules/auth/dto/register.dto';
-import { AuthService } from 'src/modules/auth/auth.service';
+import { IAuthService } from 'src/modules/auth/auth.service';
 import { LoginUserDto } from 'src/modules/auth/dto/login.dto';
 
 @Command({
@@ -12,7 +12,7 @@ import { LoginUserDto } from 'src/modules/auth/dto/login.dto';
 })
 @Injectable()
 export class RegisterUserCommand extends CommandRunner {
-  constructor(@Inject(AuthService) private readonly authService: AuthService) {
+  constructor(@Inject('IAuthService') private readonly authService: IAuthService) {
     super();
   }
 
@@ -54,7 +54,7 @@ export class RegisterUserCommand extends CommandRunner {
 })
 @Injectable()
 export class LoginUserCommand extends CommandRunner {
-  constructor(@Inject(AuthService) private readonly authService: AuthService) {
+  constructor(@Inject('IAuthService') private readonly authService: IAuthService) {
     super();
   }
 
@@ -86,7 +86,7 @@ export class LoginUserCommand extends CommandRunner {
   options: { isDefault: true },
 })
 export class CheckUserCommand extends CommandRunner {
-  constructor(@Inject(AuthService) private readonly authService: AuthService) {
+  constructor(@Inject('IAuthService') private readonly authService: IAuthService) {
     super();
   }
 

@@ -1,6 +1,6 @@
 import { Command, CommandRunner, Option } from 'nest-commander';
 import { Inject, Injectable } from '@nestjs/common';
-import { PaymentsService } from 'src/modules/payments/payments.service';
+import { IPaymentsService } from 'src/modules/payments/payments.service';
 import { CreatePaymentDto } from 'src/modules/payments/dto/create-payment.dto';
 import { UpdatePaymentDto } from 'src/modules/payments/dto/update-payment.dto';
 
@@ -14,7 +14,7 @@ interface PaymentCreateOptions {
 @Injectable()
 export class ListPaymentsCommand extends CommandRunner {
   constructor(
-    @Inject(PaymentsService) private readonly paymentsService: PaymentsService,
+    @Inject('IPaymentsService') private readonly paymentsService: IPaymentsService,
   ) {
     super();
   }
@@ -29,7 +29,7 @@ export class ListPaymentsCommand extends CommandRunner {
 @Injectable()
 export class CreatePaymentCommand extends CommandRunner {
   constructor(
-    @Inject(PaymentsService) private readonly paymentsService: PaymentsService,
+    @Inject('IPaymentsService') private readonly paymentsService: IPaymentsService,
   ) {
     super();
   }
@@ -85,7 +85,7 @@ interface PaymentGetOptions {
 @Injectable()
 export class GetPaymentCommand extends CommandRunner {
   constructor(
-    @Inject(PaymentsService) private readonly paymentsService: PaymentsService,
+    @Inject('IPaymentsService') private readonly paymentsService: IPaymentsService,
   ) {
     super();
   }
@@ -125,7 +125,7 @@ interface PaymentUpdateOptions {
 @Injectable()
 export class UpdatePaymentCommand extends CommandRunner {
   constructor(
-    @Inject(PaymentsService) private readonly paymentsService: PaymentsService,
+    @Inject('IPaymentsService') private readonly paymentsService: IPaymentsService,
   ) {
     super();
   }
@@ -182,7 +182,7 @@ interface PaymentDeleteOptions {
 @Command({ name: 'payment:remove', description: 'Delete a payment' })
 @Injectable()
 export class RemovePaymentCommand extends CommandRunner {
-  constructor(@Inject(PaymentsService) private readonly paymentsService: PaymentsService) {
+  constructor(@Inject('IPaymentsService') private readonly paymentsService: IPaymentsService) {
     super();
   }
 

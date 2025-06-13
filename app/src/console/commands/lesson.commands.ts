@@ -4,12 +4,12 @@ import { Inject } from '@nestjs/common';
 import { Command, CommandRunner, Option, SubCommand } from 'nest-commander';
 import { CreateLessonDto } from 'src/modules/lessons/dto/create-lesson.dto';
 import { UpdateLessonDto } from 'src/modules/lessons/dto/update-lesson.dto';
-import { LessonsService } from 'src/modules/lessons/lessons.service';
+import { ILessonsService } from 'src/modules/lessons/lessons.service';
 
 @Command({ name: 'lesson:create', description: 'Create a new lesson' })
 export class CreateLessonCommand extends CommandRunner {
   constructor(
-    @Inject(LessonsService) private readonly lessonsService: LessonsService,
+    @Inject('ILessonsService') private readonly lessonsService: ILessonsService,
   ) {
     super();
   }
@@ -47,10 +47,10 @@ export class CreateLessonCommand extends CommandRunner {
   }
 }
 
-@SubCommand({ name: 'list', description: 'List all lessons' })
+@Command({ name: 'lesson:list', description: 'List all lessons' })
 export class ListLessonCommand extends CommandRunner {
   constructor(
-    @Inject(LessonsService) private readonly lessonsService: LessonsService,
+    @Inject('ILessonsService') private readonly lessonsService: ILessonsService,
   ) {
     super();
   }
@@ -64,7 +64,7 @@ export class ListLessonCommand extends CommandRunner {
 @Command({ name: 'lesson:get', arguments: '<id>', description: 'Get lesson by ID' })
 export class GetLessonCommand extends CommandRunner {
   constructor(
-    @Inject(LessonsService) private readonly lessonsService: LessonsService,
+    @Inject('ILessonsService') private readonly lessonsService: ILessonsService,
   ) {
     super();
   }
@@ -82,7 +82,7 @@ export class GetLessonCommand extends CommandRunner {
 })
 export class UpdateLessonCommand extends CommandRunner {
   constructor(
-    @Inject(LessonsService) private readonly lessonsService: LessonsService,
+    @Inject('ILessonsService') private readonly lessonsService: ILessonsService,
   ) {
     super();
   }
@@ -120,7 +120,7 @@ export class UpdateLessonCommand extends CommandRunner {
 })
 export class RemoveLessonCommand extends CommandRunner {
   constructor(
-    @Inject(LessonsService) private readonly lessonsService: LessonsService,
+    @Inject('ILessonsService') private readonly lessonsService: ILessonsService,
   ) {
     super();
   }

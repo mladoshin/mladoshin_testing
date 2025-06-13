@@ -8,77 +8,91 @@ import {
   RepositoryNotFoundError,
   RepositoryUnknownError,
 } from 'src/common/errors/db-errors';
+import { CourseLessonDomain } from './domains/lesson.domain';
+import { CourseLessonMapper } from './lessons.mapper';
 
 export interface ICourseLessonRepo {
-  create(createLessonDto: CreateLessonDto): Promise<CourseLesson>;
-  update(id: string, updateLessonDto: UpdateLessonDto): Promise<CourseLesson>;
-  delete(id: string): Promise<CourseLesson>;
-  findById(id: string): Promise<CourseLesson | null>;
-  findOrFailById(id: string): Promise<CourseLesson>;
-  findAll(): Promise<CourseLesson[]>;
-  findAllByCourse(courseId: string): Promise<CourseLesson[]>;
+  create(createLessonDto: CreateLessonDto): Promise<CourseLessonDomain>;
+  update(
+    id: string,
+    updateLessonDto: UpdateLessonDto,
+  ): Promise<CourseLessonDomain>;
+  delete(id: string): Promise<CourseLessonDomain>;
+  findById(id: string): Promise<CourseLessonDomain | null>;
+  findOrFailById(id: string): Promise<CourseLessonDomain>;
+  findAll(): Promise<CourseLessonDomain[]>;
+  findAllByCourse(courseId: string): Promise<CourseLessonDomain[]>;
 }
 
 @Injectable()
-export class CourseLessonRepo implements ICourseLessonRepo{
+export class CourseLessonRepo implements ICourseLessonRepo {
   public constructor(
     @InjectRepository(CourseLesson)
     private readonly repository: Repository<CourseLesson>,
   ) {}
 
-  create(createLessonDto: CreateLessonDto) {
+  async create(createLessonDto: CreateLessonDto) {
     const lesson = this.repository.create(createLessonDto);
 
     try {
-      return this.repository.save(lesson);
+      const courseLessonDBEntity = await this.repository.save(lesson);
+      return CourseLessonMapper.toDomainEntity(courseLessonDBEntity);
     } catch (err) {
       throw new RepositoryUnknownError(err.message, CourseLessonRepo.name);
     }
   }
 
   async update(id: string, updateLessonDto: UpdateLessonDto) {
-    let lesson = await this.findOrFailById(id);
-    const updated = this.repository.merge(lesson, updateLessonDto);
+    let lessonDBEntity = await this.findOrFailById(id);
+    const updated = this.repository.merge(lessonDBEntity, updateLessonDto);
     try {
-      lesson = await this.repository.save(updated);
+      lessonDBEntity = await this.repository.save(updated);
     } catch (err) {
       throw new RepositoryUnknownError(err.message, CourseLessonRepo.name);
     }
-    return lesson;
+    return CourseLessonMapper.toDomainEntity(lessonDBEntity);
   }
 
-  findById(id: string) {
-    return this.repository.findOne({
+  async findById(id: string) {
+    const lessonDBEntity = await this.repository.findOne({
       where: { id },
     });
+    return lessonDBEntity
+      ? CourseLessonMapper.toDomainEntity(lessonDBEntity)
+      : null;
   }
 
   async findOrFailById(id: string): Promise<CourseLesson> {
-    const lesson = await this.findById(id);
-    if (!lesson) {
+    const lessonDomainEntity = await this.findById(id);
+    if (!lessonDomainEntity) {
       throw new RepositoryNotFoundError('Урок не найден.', CourseLesson.name);
     }
-
-    return lesson;
+    return lessonDomainEntity;
   }
 
-  findAll() {
-    return this.repository.find();
+  async findAll() {
+    const lessonDBEntities = await this.repository.find();
+    return lessonDBEntities.map((lessonDBEntity) =>
+      CourseLessonMapper.toDomainEntity(lessonDBEntity),
+    );
   }
 
-  findAllByCourse(courseId: string) {
-    return this.repository.find({
+  async findAllByCourse(courseId: string) {
+    const lessonDBEntities = await this.repository.find({
       where: { course_id: courseId },
     });
+    return lessonDBEntities.map((lessonDBEntity) =>
+      CourseLessonMapper.toDomainEntity(lessonDBEntity),
+    );
   }
 
   async delete(id: string) {
-    const lesson = await this.findOrFailById(id);
+    const lessonDomainEntity = await this.findOrFailById(id);
     try {
-      await this.repository.remove(lesson);
+      await this.repository.remove(lessonDomainEntity);
     } catch (err) {
       throw new RepositoryUnknownError(err.message, CourseLessonRepo.name);
     }
-    return lesson;
+    return lessonDomainEntity;
   }
 }

@@ -9,19 +9,21 @@ import { User } from './entities/user.entity';
 import { Repository } from 'typeorm';
 import { UpdateUserDto } from './dto/update-user.dto';
 import { UserProfile } from './entities/user-profile.entity';
+import { UserDomain } from './domains/user.domain';
+import { UsersMapper } from './users.mapper';
 
 export interface IUserRepo {
-  findByEmail(email: string): Promise<User | null>;
-  findById(id: string): Promise<User | null>;
-  findOrFailById(id: string): Promise<User>;
-  findAll(): Promise<User[]>;
-  create(createUserDto: CreateUserDto): Promise<User>;
-  update(id: string, updateUserDto: UpdateUserDto): Promise<User>;
-  delete(id: string): Promise<User>;
+  findByEmail(email: string): Promise<UserDomain | null>;
+  findById(id: string): Promise<UserDomain | null>;
+  findOrFailById(id: string): Promise<UserDomain>;
+  findAll(): Promise<UserDomain[]>;
+  create(createUserDto: CreateUserDto): Promise<UserDomain>;
+  update(id: string, updateUserDto: UpdateUserDto): Promise<UserDomain>;
+  delete(id: string): Promise<UserDomain>;
 }
 
 @Injectable()
-export class UserRepo implements IUserRepo{
+export class UserRepo implements IUserRepo {
   public constructor(
     @InjectRepository(User)
     private readonly repository: Repository<User>,
@@ -29,71 +31,75 @@ export class UserRepo implements IUserRepo{
     private readonly profileRepository: Repository<UserProfile>,
   ) {}
 
-  findByEmail(email: string) {
-    return this.repository.findOne({
+  async findByEmail(email: string) {
+    const userDBEntity = await this.repository.findOne({
       where: { email },
       relations: {
         profile: true,
       },
     });
+    return userDBEntity ? UsersMapper.toDomainEntity(userDBEntity) : null;
   }
 
   async delete(id: string) {
-    const user = await this.findOrFailById(id);
+    const userDomain = await this.findOrFailById(id);
     try {
-      await this.repository.remove(user);
+      await this.repository.remove(userDomain as User);
     } catch (err) {
       throw new RepositoryUnknownError(err.message, UserRepo.name);
     }
-    return user;
+    return userDomain;
   }
 
   async update(id: string, updateUserDto: UpdateUserDto) {
-    let user = await this.findOrFailById(id);
-    const updated = this.repository.merge(user, updateUserDto);
+    let userDomain = await this.findOrFailById(id);
+    const updated = this.repository.merge(userDomain as User, updateUserDto);
     try {
-      user = await this.repository.save(updated);
+      userDomain = await this.repository.save(updated);
     } catch (err) {
       throw new RepositoryUnknownError(err.message, UserRepo.name);
     }
-    return user;
+    return userDomain;
   }
 
-  create(createUserDto: CreateUserDto) {
-    const user = this.repository.create(createUserDto);
-    user.profile = this.profileRepository.create({
+  async create(createUserDto: CreateUserDto) {
+    let userDBEntity = this.repository.create(createUserDto);
+    userDBEntity.profile = this.profileRepository.create({
       first_name: createUserDto.first_name,
       last_name: createUserDto.last_name,
     });
     try {
-      return this.repository.save(user);
+      userDBEntity = await this.repository.save(userDBEntity);
+      return UsersMapper.toDomainEntity(userDBEntity);
     } catch (err) {
       throw new RepositoryUnknownError(err.message, UserRepo.name);
     }
   }
 
-  findById(id: string) {
-    return this.repository.findOne({
+  async findById(id: string) {
+    const userDBEntity = await this.repository.findOne({
       where: { id },
       relations: {
         profile: true,
       },
     });
+    return userDBEntity ? UsersMapper.toDomainEntity(userDBEntity) : null;
   }
 
   async findOrFailById(id: string) {
-    const user = await this.findById(id);
-    if (!user) {
+    const userDomain = await this.findById(id);
+    if (!userDomain) {
       throw new RepositoryNotFoundError('Пользователь не найден.', User.name);
     }
-    return user;
+    return userDomain;
   }
 
-  findAll() {
-    return this.repository.find({
+  async findAll() {
+    const userDBEntities = await this.repository.find({
       relations: {
         profile: true,
       },
     });
+    return userDBEntities.map((user) => UsersMapper.toDomainEntity(user));
   }
 }

@@ -1,6 +1,7 @@
 import { NotFoundException } from '@nestjs/common';
 import { User } from '../entities/user.entity';
 import { instanceToPlain } from 'class-transformer';
+import { UserDomain } from '../domains/user.domain';
 
 export class UserResponse {
   id: number;
@@ -10,7 +11,7 @@ export class UserResponse {
   bio: string;
   role: string;
 
-  constructor(user: User) {
+  constructor(user: UserDomain) {
     const { profile, password, ...rest } = instanceToPlain(user) as User;
     Object.assign(this, rest);
     this.first_name = profile.first_name;
@@ -18,7 +19,7 @@ export class UserResponse {
     this.bio = profile.bio;
   }
 
-  static make(user: User | null): UserResponse {
+  static make(user: UserDomain | null): UserResponse {
     if (!user) {
       throw new NotFoundException('Пользователь не найден');
     }

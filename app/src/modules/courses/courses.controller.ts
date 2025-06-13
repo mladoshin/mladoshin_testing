@@ -21,13 +21,13 @@ import { CourseLessonResponse } from '../lessons/dto/lesson-response.dto';
 import { AccessLog } from 'src/common/logging/access-log.decorator';
 
 @Controller('courses')
-@UseGuards(JwtAuthGuard)
 export class CoursesController {
   constructor(
     @Inject('ICoursesService') private readonly coursesService: ICoursesService,
   ) {}
 
   @Post()
+  @UseGuards(JwtAuthGuard)
   @AccessLog()
   async create(
     @Body() createCourseDto: CreateCourseDto,
@@ -37,6 +37,7 @@ export class CoursesController {
   }
 
   @Post('/:id/register')
+  @UseGuards(JwtAuthGuard)
   @AccessLog()
   async register(
     @User() user: JWTPayload,
@@ -50,6 +51,7 @@ export class CoursesController {
   }
 
   @Post('/:id/pay')
+  @UseGuards(JwtAuthGuard)
   @AccessLog()
   async purchaseCourse(
     @User() user: JWTPayload,
@@ -70,6 +72,7 @@ export class CoursesController {
   }
 
   @Get('/:id/lessons')
+  @UseGuards(JwtAuthGuard)
   @AccessLog()
   async findAllLessons(
     @User() user: JWTPayload,
@@ -80,6 +83,7 @@ export class CoursesController {
   }
 
   @Get(':id/enrollments')
+  @UseGuards(JwtAuthGuard)
   @AccessLog()
   async findAllEnrollments(
     @Param('id') courseId: string,
@@ -90,6 +94,7 @@ export class CoursesController {
   }
 
   @Get(':id/payments')
+  @UseGuards(JwtAuthGuard)
   @AccessLog()
   async findAllPayments(
     @Param('id') courseId: string,
@@ -99,6 +104,7 @@ export class CoursesController {
   }
 
   @Get(':id')
+  @UseGuards(JwtAuthGuard)
   @AccessLog()
   async findOne(@Param('id') id: string): Promise<CourseResponse> {
     const course = await this.coursesService.findOne(id);
@@ -106,6 +112,7 @@ export class CoursesController {
   }
 
   @Patch(':id')
+  @UseGuards(JwtAuthGuard)
   @AccessLog()
   async update(
     @Param('id') id: string,
@@ -116,6 +123,7 @@ export class CoursesController {
   }
 
   @Delete(':id')
+  @UseGuards(JwtAuthGuard)
   @AccessLog()
   async remove(@Param('id') id: string): Promise<CourseResponse> {
     const course = await this.coursesService.remove(id);

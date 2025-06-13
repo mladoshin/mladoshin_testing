@@ -1,6 +1,6 @@
 import { Command, CommandRunner, Option } from 'nest-commander';
 import { Inject, Injectable } from '@nestjs/common';
-import { UsersService } from 'src/modules/users/users.service';
+import { IUsersService } from 'src/modules/users/users.service';
 import { CreateUserDto } from 'src/modules/users/dto/create-user.dto';
 import { UpdateUserDto } from 'src/modules/users/dto/update-user.dto';
 import { UserRole } from 'src/modules/users/entities/user.entity';
@@ -9,7 +9,7 @@ import { UserRole } from 'src/modules/users/entities/user.entity';
 @Command({ name: 'user:create', description: 'Создать пользователя' })
 export class CreateUserCommand extends CommandRunner {
   constructor(
-    @Inject(UsersService) private readonly usersService: UsersService,
+    @Inject('IUsersService') private readonly usersService: IUsersService,
   ) {
     super();
   }
@@ -61,7 +61,7 @@ export class CreateUserCommand extends CommandRunner {
 @Command({ name: 'user:list', description: 'Показать всех пользователей' })
 export class ListUsersCommand extends CommandRunner {
   constructor(
-    @Inject(UsersService) private readonly usersService: UsersService,
+    @Inject('IUsersService') private readonly usersService: IUsersService,
   ) {
     super();
   }
@@ -85,7 +85,7 @@ export class ListUsersCommand extends CommandRunner {
 @Command({ name: 'user:show', description: 'Показать пользователя по ID' })
 export class ShowUserCommand extends CommandRunner {
   constructor(
-    @Inject(UsersService) private readonly usersService: UsersService,
+    @Inject('IUsersService') private readonly usersService: IUsersService,
   ) {
     super();
   }
@@ -110,7 +110,7 @@ export class ShowUserCommand extends CommandRunner {
 @Injectable()
 export class UpdateUserCommand extends CommandRunner {
   constructor(
-    @Inject(UsersService) private readonly usersService: UsersService,
+    @Inject('IUsersService') private readonly usersService: IUsersService,
   ) {
     super();
   }
@@ -160,7 +160,7 @@ export class UpdateUserCommand extends CommandRunner {
 @Injectable()
 export class RemoveUserCommand extends CommandRunner {
   constructor(
-    @Inject(UsersService) private readonly usersService: UsersService,
+    @Inject('IUsersService') private readonly usersService: IUsersService,
   ) {
     super();
   }

@@ -8,14 +8,16 @@ import {
   RepositoryUnknownError,
 } from 'src/common/errors/db-errors';
 import { UpdateCourseDto } from './dto/update-course.dto';
+import { CourseDomain } from './domains/course.domain';
+import { CourseMapper } from './courses.mapper';
 
 export interface ICourseRepo {
-  create(createCourseDto: CreateCourseDto): Promise<Course>;
-  update(id: string, updateCourseDto: UpdateCourseDto): Promise<Course>;
-  delete(id: string): Promise<Course>;
-  findById(id: string): Promise<Course | null>;
-  findOrFailById(id: string): Promise<Course>;
-  findAll(): Promise<Course[]>;
+  create(createCourseDto: CreateCourseDto): Promise<CourseDomain>;
+  update(id: string, updateCourseDto: UpdateCourseDto): Promise<CourseDomain>;
+  delete(id: string): Promise<CourseDomain>;
+  findById(id: string): Promise<CourseDomain | null>;
+  findOrFailById(id: string): Promise<CourseDomain>;
+  findAll(): Promise<CourseDomain[]>;
 }
 
 @Injectable()
@@ -25,54 +27,55 @@ export class CourseRepo implements ICourseRepo {
     private readonly repository: Repository<Course>,
   ) {}
 
-  create(createCourseDto: CreateCourseDto) {
+  async create(createCourseDto: CreateCourseDto) {
     const course = this.repository.create(createCourseDto);
     try {
-      return this.repository.save(course);
+      const courseDBEntity = await this.repository.save(course)
+      return CourseMapper.toDomainEntity(courseDBEntity);
     } catch (err) {
       throw new RepositoryUnknownError(err.message, CourseRepo.name);
     }
   }
 
   async update(id: string, updateCourseDto: UpdateCourseDto) {
-    let course = await this.findOrFailById(id);
-    const updated = this.repository.merge(course, updateCourseDto);
+    let courseDBEntity = await this.findOrFailById(id);
+    const updated = this.repository.merge(courseDBEntity, updateCourseDto);
     try {
-      course = await this.repository.save(updated);
+      courseDBEntity = await this.repository.save(updated);
     } catch (err) {
       throw new RepositoryUnknownError(err.message, CourseRepo.name);
     }
-    return course;
+    return CourseMapper.toDomainEntity(courseDBEntity);
   }
 
-  findById(id: string) {
-    return this.repository.findOne({
+  async findById(id: string) {
+    const courseDBEntity = await this.repository.findOne({
       where: { id },
       relations: {
         lessons: true,
       },
     });
+    return courseDBEntity ? CourseMapper.toDomainEntity(courseDBEntity) : null;
   }
 
   async findOrFailById(id: string): Promise<Course> {
-    const course = await this.repository.findOne({
-      where: { id },
-    });
-    if (!course) {
+    const courseDomain = await this.findById(id);
+    if (!courseDomain) {
       throw new RepositoryNotFoundError('Курс не найден.', Course.name);
     }
-    return course;
+    return courseDomain;
   }
 
-  findAll() {
-    return this.repository.find();
+  async findAll() {
+    const courseDBEntities = await this.repository.find();
+    return courseDBEntities.map(courseDBEntity => CourseMapper.toDomainEntity(courseDBEntity));
   }
 
   async delete(id: string) {
-    const course = await this.findOrFailById(id);
-    const tmp = { ...course };
+    const courseDomain = await this.findOrFailById(id);
+    const tmp = { ...courseDomain };
     try {
-      await this.repository.remove(course);
+      await this.repository.remove(courseDomain);
     } catch (err) {
       throw new RepositoryUnknownError(err.message, CourseRepo.name);
     }

@@ -1,14 +1,14 @@
 import { NotFoundException } from '@nestjs/common';
 import { instanceToPlain } from 'class-transformer';
-import { CourseEnrollment } from '../entities/course-enrollment.entity';
+import { CourseEnrollmentDomain } from '../domains/course-enrollment.domain';
 
 export class CourseEnrollmentResponse {
-  constructor(course: CourseEnrollment) {
-    const rest = instanceToPlain(course) as CourseEnrollment;
+  constructor(course: CourseEnrollmentDomain) {
+    const rest = instanceToPlain(course) as CourseEnrollmentDomain;
     Object.assign(this, rest);
   }
 
-  static make(course: CourseEnrollment | null): CourseEnrollmentResponse {
+  static make(course: CourseEnrollmentDomain | null): CourseEnrollmentResponse {
     if (!course) {
       throw new NotFoundException('Пользователь не найден');
     }
@@ -16,7 +16,9 @@ export class CourseEnrollmentResponse {
     return new CourseEnrollmentResponse(course);
   }
 
-  static collection(courses: CourseEnrollment[]): CourseEnrollmentResponse[] {
+  static collection(
+    courses: CourseEnrollmentDomain[],
+  ): CourseEnrollmentResponse[] {
     return courses.map((course) => new CourseEnrollmentResponse(course));
   }
 }

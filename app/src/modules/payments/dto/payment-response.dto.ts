@@ -1,14 +1,14 @@
 import { NotFoundException } from '@nestjs/common';
 import { instanceToPlain } from 'class-transformer';
-import { Payment } from '../entities/payment.entity';
+import { PaymentDomain } from '../domains/payment.domain';
 
 export class PaymentResponse {
-  constructor(payment: Payment) {
-    const rest = instanceToPlain(payment) as Payment;
+  constructor(payment: PaymentDomain) {
+    const rest = instanceToPlain(payment) as PaymentDomain;
     Object.assign(this, rest);
   }
 
-  static make(payment: Payment | null): PaymentResponse {
+  static make(payment: PaymentDomain | null): PaymentResponse {
     if (!payment) {
       throw new NotFoundException('Пользователь не найден');
     }
@@ -16,7 +16,7 @@ export class PaymentResponse {
     return new PaymentResponse(payment);
   }
 
-  static collection(payments: Payment[]): PaymentResponse[] {
+  static collection(payments: PaymentDomain[]): PaymentResponse[] {
     return payments.map((payment) => new PaymentResponse(payment));
   }
 }

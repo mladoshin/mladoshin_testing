@@ -5,6 +5,7 @@ import {
   CreateCourseCommand,
   GetCourseCommand,
   ListCourseCommand,
+  ListCourseEnrollmentsCommand,
   PurchaseCourseCommand,
   RegisterCourseCommand,
   RemoveCourseCommand,
@@ -21,10 +22,35 @@ import { UsersModule } from 'src/modules/users/users.module';
 import { AuthModule } from 'src/modules/auth/auth.module';
 import { AppController } from 'src/app.controller';
 import { CoursesService } from 'src/modules/courses/courses.service';
-import { CreateLessonCommand, GetLessonCommand, LessonCommands, ListLessonCommand, RemoveLessonCommand, UpdateLessonCommand } from './commands/lesson.commands';
-import { CheckUserCommand, LoginUserCommand, RegisterUserCommand } from './commands/auth.command';
-import { CreateUserCommand, ListUsersCommand, RemoveUserCommand, ShowUserCommand, UpdateUserCommand } from './commands/user.command';
-import { CreatePaymentCommand, GetPaymentCommand, ListPaymentsCommand, RemovePaymentCommand, UpdatePaymentCommand } from './commands/payment.command';
+import {
+  CreateLessonCommand,
+  GetLessonCommand,
+  LessonCommands,
+  ListLessonCommand,
+  RemoveLessonCommand,
+  UpdateLessonCommand,
+} from './commands/lesson.commands';
+import {
+  CheckUserCommand,
+  LoginUserCommand,
+  RegisterUserCommand,
+} from './commands/auth.command';
+import {
+  CreateUserCommand,
+  ListUsersCommand,
+  RemoveUserCommand,
+  ShowUserCommand,
+  UpdateUserCommand,
+} from './commands/user.command';
+import {
+  CreatePaymentCommand,
+  GetPaymentCommand,
+  ListPaymentsCommand,
+  RemovePaymentCommand,
+  UpdatePaymentCommand,
+} from './commands/payment.command';
+import { AppLoggerModule } from 'src/common/logging/log.module';
+import { ErrorLoggerInterceptor } from 'src/common/logging/error-logger.interceptor';
 
 @Module({
   imports: [
@@ -42,6 +68,7 @@ import { CreatePaymentCommand, GetPaymentCommand, ListPaymentsCommand, RemovePay
         username: configService.getOrThrow('POSTGRES_USER'),
         database: configService.getOrThrow('POSTGRES_DB'),
         autoLoadEntities: true,
+        logging: true,
         entities: [
           '/Users/maksimladosin/Documents/BMSTU/PPO/app/**/*.entity{.ts,.js}',
         ],
@@ -52,7 +79,8 @@ import { CreatePaymentCommand, GetPaymentCommand, ListPaymentsCommand, RemovePay
     LessonsModule,
     AuthModule,
     UsersModule,
-    PaymentsModule
+    PaymentsModule,
+    AppLoggerModule,
   ],
   providers: [
     //Course
@@ -63,6 +91,7 @@ import { CreatePaymentCommand, GetPaymentCommand, ListPaymentsCommand, RemovePay
     RemoveCourseCommand,
     PurchaseCourseCommand,
     RegisterCourseCommand,
+    ListCourseEnrollmentsCommand,
 
     //Lesson
     LessonCommands,
@@ -89,7 +118,12 @@ import { CreatePaymentCommand, GetPaymentCommand, ListPaymentsCommand, RemovePay
     CreatePaymentCommand,
     GetPaymentCommand,
     UpdatePaymentCommand,
-    RemovePaymentCommand
+    RemovePaymentCommand,
+    ErrorLoggerInterceptor,
   ],
 })
-export class ConsoleModule {}
+export class ConsoleModule {
+  constructor() {
+    console.log('Console module initialized');
+  }
+}

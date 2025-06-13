@@ -16,13 +16,14 @@ import {
 import { User } from '../users/entities/user.entity';
 import { ConfigService } from '@nestjs/config';
 import { RepositoryNotFoundError } from 'src/common/errors/db-errors';
+import { UserDomain } from '../users/domains/user.domain';
 
 export interface IAuthService {
-  createTokenPair(user: User): TokenPair;
+  createTokenPair(user: UserDomain): TokenPair;
   login(loginUserDto: LoginUserDto): Promise<TokenPair>;
   register(registerUserDto: RegisterUserDto): Promise<TokenPair>;
   logout(): string;
-  getMe(userId: string): Promise<User>;
+  getMe(userId: string): Promise<UserDomain>;
   check(email: string): Promise<boolean>;
 }
 
@@ -35,7 +36,7 @@ export class AuthService implements IAuthService {
     @Inject(ConfigService) private readonly configService: ConfigService,
   ) {}
 
-  createTokenPair(user: User): TokenPair {
+  createTokenPair(user: UserDomain): TokenPair {
     const body = { id: user.id, email: user.email, role: user.role };
     const secret = this.configService.getOrThrow('JWT_SECRET');
     const accessToken = this.tokenService.create(body, secret, '1d');

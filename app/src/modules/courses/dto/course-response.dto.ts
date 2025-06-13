@@ -1,6 +1,7 @@
 import { NotFoundException } from '@nestjs/common';
 import { instanceToPlain } from 'class-transformer';
 import { Course } from '../entities/course.entity';
+import { CourseDomain } from '../domains/course.domain';
 
 interface CourseResponseWithCommision
   extends Omit<Course, 'lessons' | 'payments' | 'courseEnrollments'> {
@@ -17,8 +18,8 @@ export class CourseResponse implements CourseResponseWithCommision {
   date_start: string;
   date_finish: string;
 
-  constructor(course: Course) {
-    const rest = instanceToPlain(course) as Course;
+  constructor(course: CourseDomain) {
+    const rest = instanceToPlain(course) as CourseDomain;
     Object.assign(this, rest);
 
     const commission = parseFloat(process.env.COURSE_COMMISION || '1');
@@ -26,14 +27,14 @@ export class CourseResponse implements CourseResponseWithCommision {
     this.commision = commission;
   }
 
-  static make(course: Course | null): CourseResponse {
+  static make(course: CourseDomain | null): CourseResponse {
     if (!course) {
       throw new NotFoundException('Курс не найден');
     }
     return new CourseResponse(course);
   }
 
-  static collection(courses: Course[]): CourseResponse[] {
+  static collection(courses: CourseDomain[]): CourseResponse[] {
     return courses.map((course) => new CourseResponse(course));
   }
 }

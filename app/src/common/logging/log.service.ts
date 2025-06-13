@@ -1,4 +1,4 @@
-import { Global, Inject, Injectable, LoggerService } from '@nestjs/common';
+import { forwardRef, Global, Inject, Injectable, LoggerService } from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
 import * as fs from 'fs';
 import * as path from 'path';
@@ -14,7 +14,7 @@ export class AppLoggerService implements IAppLoggerService {
   private readonly accessLogFilePath: string;
   private readonly errorFilePath: string;
 
-  constructor(@Inject() configService: ConfigService) {
+  constructor(@Inject(forwardRef(() => ConfigService)) configService: ConfigService) {
     this.logFilePath = path.join(
       __dirname,
       '../../../../logs',

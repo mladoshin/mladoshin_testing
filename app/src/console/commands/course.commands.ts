@@ -1,18 +1,29 @@
 import { Inject, Injectable } from '@nestjs/common';
 import { Command, CommandRunner, Option, SubCommand } from 'nest-commander';
-import { CoursesService } from 'src/modules/courses/courses.service';
+import {
+  CoursesService,
+  ICoursesService,
+} from 'src/modules/courses/courses.service';
 import { CreateCourseDto } from 'src/modules/courses/dto/create-course.dto';
 import { UpdateCourseDto } from 'src/modules/courses/dto/update-course.dto';
 
 // Команда для покупки курса пользователем (только если уже зарегистрировался)
 // pnpm run console course:purchase -u fe045e65-5d45-4165-925d-a48c809779e9 -c d279f85c-9eda-469c-9e26-de79dce92638
-@Command({ name: 'course:purchase', description: 'Оплатить курс пользователем' })
+@Command({
+  name: 'course:purchase',
+  description: 'Оплатить курс пользователем',
+})
 export class PurchaseCourseCommand extends CommandRunner {
-  constructor(@Inject(CoursesService) private readonly coursesService: CoursesService) {
+  constructor(
+    @Inject('ICoursesService') private readonly coursesService: ICoursesService,
+  ) {
     super();
   }
 
-  async run(passedParams: string[], options: Record<string, any>): Promise<void> {
+  async run(
+    passedParams: string[],
+    options: Record<string, any>,
+  ): Promise<void> {
     const payment = await this.coursesService.purchaseCourse(
       options.user,
       options.course,
@@ -33,13 +44,21 @@ export class PurchaseCourseCommand extends CommandRunner {
 
 // Команда для регистрации на курс пользователя
 // pnpm run console course:register -u fe045e65-5d45-4165-925d-a48c809779e9 -c d279f85c-9eda-469c-9e26-de79dce92638
-@Command({ name: 'course:register', description: 'Зарегистрировать на курс пользователя' })
+@Command({
+  name: 'course:register',
+  description: 'Зарегистрировать на курс пользователя',
+})
 export class RegisterCourseCommand extends CommandRunner {
-  constructor(@Inject(CoursesService) private readonly coursesService: CoursesService) {
+  constructor(
+    @Inject('ICoursesService') private readonly coursesService: ICoursesService,
+  ) {
     super();
   }
 
-  async run(passedParams: string[], options: Record<string, any>): Promise<void> {
+  async run(
+    passedParams: string[],
+    options: Record<string, any>,
+  ): Promise<void> {
     const courseEnrollment = await this.coursesService.registerUser(
       options.user,
       options.course,
@@ -61,7 +80,9 @@ export class RegisterCourseCommand extends CommandRunner {
 // pnpm run console course:create --name "Курс 2" --price 100 --start "2025-01-01" --finish "2025-01-10"
 @Command({ name: 'course:create', description: 'Создать новый курс' })
 export class CreateCourseCommand extends CommandRunner {
-  constructor(@Inject(CoursesService) private readonly coursesService: CoursesService) {
+  constructor(
+    @Inject('ICoursesService') private readonly coursesService: ICoursesService,
+  ) {
     super();
   }
 
@@ -103,7 +124,7 @@ export class CreateCourseCommand extends CommandRunner {
 @Command({ name: 'course:list', description: 'Показать все курсы' })
 export class ListCourseCommand extends CommandRunner {
   constructor(
-    @Inject(CoursesService) private readonly coursesService: CoursesService,
+    @Inject('ICoursesService') private readonly coursesService: ICoursesService,
   ) {
     super();
   }
@@ -120,10 +141,39 @@ export class ListCourseCommand extends CommandRunner {
   }
 }
 
-@Command({ name: 'course:get', arguments: '<id>', description: 'Получить курс по ID' })
+// pnpm run console course:enrollments
+@Command({
+  name: 'course:enrollments',
+  description: 'Показать всех участников',
+})
+export class ListCourseEnrollmentsCommand extends CommandRunner {
+  constructor(
+    @Inject('ICoursesService') private readonly coursesService: ICoursesService,
+  ) {
+    super();
+  }
+
+  async run(passedParams: string[]): Promise<void> {
+    const [id] = passedParams;
+    const courseEnrollments = await this.coursesService.findAllEnrollments(id);
+    console.table(courseEnrollments, [
+      'id',
+      'user_id',
+      'course_id',
+      'created_at',
+      'status',
+    ]);
+  }
+}
+
+@Command({
+  name: 'course:get',
+  arguments: '<id>',
+  description: 'Получить курс по ID',
+})
 export class GetCourseCommand extends CommandRunner {
   constructor(
-    @Inject(CoursesService) private readonly coursesService: CoursesService,
+    @Inject('ICoursesService') private readonly coursesService: ICoursesService,
   ) {
     super();
   }
@@ -135,10 +185,14 @@ export class GetCourseCommand extends CommandRunner {
   }
 }
 
-@Command({ name: 'course:update', arguments: '<id>', description: 'Обновить курс' })
+@Command({
+  name: 'course:update',
+  arguments: '<id>',
+  description: 'Обновить курс',
+})
 export class UpdateCourseCommand extends CommandRunner {
   constructor(
-    @Inject(CoursesService) private readonly coursesService: CoursesService,
+    @Inject('ICoursesService') private readonly coursesService: ICoursesService,
   ) {
     super();
   }
@@ -178,10 +232,14 @@ export class UpdateCourseCommand extends CommandRunner {
   }
 }
 
-@Command({ name: 'course:remove', arguments: '<id>', description: 'Удалить курс' })
+@Command({
+  name: 'course:remove',
+  arguments: '<id>',
+  description: 'Удалить курс',
+})
 export class RemoveCourseCommand extends CommandRunner {
   constructor(
-    @Inject(CoursesService) private readonly coursesService: CoursesService,
+    @Inject('ICoursesService') private readonly coursesService: ICoursesService,
   ) {
     super();
   }
@@ -194,16 +252,16 @@ export class RemoveCourseCommand extends CommandRunner {
 }
 
 @Command({
-    name: 'course',
-    description: 'Manage courses',
-  })
-  export class CourseCommands extends CommandRunner {
-    async run(
-      passedParams: string[],
-      options?: Record<string, any>,
-    ): Promise<void> {
-      console.log(
-        'Available subcommands: create, list, get <id>, update <id>, remove <id>',
-      );
-    }
+  name: 'course',
+  description: 'Manage courses',
+})
+export class CourseCommands extends CommandRunner {
+  async run(
+    passedParams: string[],
+    options?: Record<string, any>,
+  ): Promise<void> {
+    console.log(
+      'Available subcommands: create, list, get <id>, update <id>, remove <id>',
+    );
   }
+}
