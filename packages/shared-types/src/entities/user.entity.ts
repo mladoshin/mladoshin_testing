@@ -1,9 +1,9 @@
-import { UserProfileEntity } from './user-profile.entity.ts';
-import { PaymentEntity } from './payment.entity.ts';
-import { CourseEnrollmentEntity } from './course-enrollment.entity.ts';
-import { UserRole } from '../enums/user-role.enum.ts';
+import { UserProfileEntity } from './user-profile.entity';
+import { PaymentEntity } from './payment.entity';
+import { CourseEnrollmentEntity } from './course-enrollment.entity';
+import { UserRole } from '../enums/user-role.enum';
 
-export class UserEntity {
+export interface UserEntity {
   id: string;
   email: string;
   password: string;

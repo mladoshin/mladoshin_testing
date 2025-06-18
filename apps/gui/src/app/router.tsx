@@ -10,6 +10,9 @@ import ProfilePage from "@/pages/ProfilePage";
 import { AcademyAboutCoursePage } from "@/pages/Academy/AboutCoursePage";
 import { AdminRoute } from "@/shared/routing/AdminRoute";
 import AdminDashboardPage from "@/pages/Admin/DashboardPage";
+import { AdminCoursePage } from "@/pages/Admin/CoursePage";
+import ForbiddenPage from "@/pages/Error/ForbiddenPage";
+import NotFoundPage from "@/pages/Error/NotFoundPage";
 
 export const appRouter = createBrowserRouter([
   {
@@ -26,7 +29,6 @@ export const appRouter = createBrowserRouter([
   },
   { path: "/courses/:id/about", element: <CoursePage /> },
   { path: "/courses", element: <AllCoursesPage /> },
-
   {
     element: <PrivateRoute />,
     children: [
@@ -42,10 +44,15 @@ export const appRouter = createBrowserRouter([
   },
   {
     element: <AdminRoute />,
-    path: '/admin',
+    path: "/admin",
     children: [
       { path: "/admin", element: <Navigate to="/admin/courses" /> },
-      { path: "/admin/courses", element: <AdminDashboardPage /> }
+      { path: "/admin/courses", element: <AdminDashboardPage /> },
+      { path: "/admin/courses/:id", element: <AdminCoursePage /> },
     ],
   },
+
+  // Страницы ошибок
+  { path: "/403", element: <ForbiddenPage /> },
+  { path: "*", element: <NotFoundPage /> },
 ]);

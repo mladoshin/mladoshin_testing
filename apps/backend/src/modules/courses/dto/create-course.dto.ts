@@ -1,6 +1,7 @@
+import { CreateCourseRequestDto } from "@shared/types";
 import { IsDateString, IsNotEmpty, IsNumber, IsString, Min } from "class-validator";
 
-export class CreateCourseDto {
+export class CreateCourseDto implements CreateCourseRequestDto {
     @IsString()
     @IsNotEmpty()
     name: string;

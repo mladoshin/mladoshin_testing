@@ -15,13 +15,6 @@ export const AllCoursesPage = () => {
       </GuestLayout>
     );
 
-  if (loading)
-    return (
-      <GuestLayout>
-        <div className="text-black">Загрузка</div>
-      </GuestLayout>
-    );
-
   const handleCourseClick = (course: Course) => {
     navigate(`/courses/${course.id}/about`);
   };
@@ -29,7 +22,11 @@ export const AllCoursesPage = () => {
   return (
     <GuestLayout>
       <h2 className="text-black text-2xl font-semibold mb-6">Мероприятия</h2>
-      <CourseList courses={courses} onCourseClick={handleCourseClick} />
+      <CourseList
+        courses={courses}
+        onCourseClick={handleCourseClick}
+        loading={loading}
+      />
     </GuestLayout>
   );
 };

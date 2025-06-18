@@ -1,9 +1,10 @@
 import { Course } from "@/entities/course/model/types";
 import { CourseCard } from "@/entities/course/ui/CourseCard";
+import { SpinnerIcon } from "@/shared/ui/SpinnerIcon";
 
 interface CourseListProps {
   courses: Course[];
-  title?: string;
+  loading?: boolean;
   showActionButtons?: boolean;
   onCourseClick?: (course: Course) => void;
   handleCourseAction?: (
@@ -14,15 +15,23 @@ interface CourseListProps {
 
 export function CourseList({
   courses,
-  title,
+  loading,
   showActionButtons,
   onCourseClick,
   handleCourseAction,
 }: CourseListProps) {
+  if (loading) {
+    return (
+      <section className="py-6">
+        <div className="w-dull flex justify-center items-center gap-3 text-black">
+          <SpinnerIcon className="w-7 h-7 animate-spin" />
+        </div>
+      </section>
+    );
+  }
+
   return (
     <section className="py-6">
-      {title && <h2 className="text-2xl font-bold mb-4">{title}</h2>}
-
       {courses.length === 0 ? (
         <p className="text-gray-500">Нет доступных курсов</p>
       ) : (

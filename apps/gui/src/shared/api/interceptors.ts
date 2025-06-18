@@ -2,6 +2,7 @@
 import { AxiosInstance } from "axios";
 import { useAuthStore } from "@/features/auth/model/store";
 import { authApi } from "@/features/auth/model/api";
+import { ValidationError } from "./errors";
 
 export function setupInterceptors(instance: AxiosInstance) {
   instance.interceptors.request.use((config) => {
@@ -15,34 +16,40 @@ export function setupInterceptors(instance: AxiosInstance) {
   });
 
   instance.interceptors.response.use(
-  (res) => res,
-  async (error) => {
-    const original = error.config;
+    (res) => res,
+    async (error) => {
+      const original = error.config;
 
-    // Убедись, что это не login/register
-    const isAuthRoute = original?.url?.includes('/auth/login') || original?.url?.includes('/auth/register');
+      // Убедись, что это не login/register
+      const isAuthRoute =
+        original?.url?.includes("/auth/login") ||
+        original?.url?.includes("/auth/register");
 
-    if (error.response?.status === 401 && !original._retry && !isAuthRoute) {
-      original._retry = true;
+      if (error.response?.status === 401 && !original._retry && !isAuthRoute) {
+        original._retry = true;
 
-      try {
-        const { accessToken } = await authApi.refresh();
-        useAuthStore.getState().setAccessToken(accessToken);
+        try {
+          const { access_token } = await authApi.refresh();
+          useAuthStore.getState().setAccessToken(access_token);
 
-        original.headers = {
-          ...original.headers,
-          Authorization: `Bearer ${accessToken}`,
-        };
+          original.headers = {
+            ...original.headers,
+            Authorization: `Bearer ${access_token}`,
+          };
 
-        return instance(original); // 🔁 Повторить запрос
-      } catch (e) {
-        useAuthStore.getState().setAccessToken(null);
-        window.location.href = "/login";
+          return instance(original); // 🔁 Повторить запрос
+        } catch (e) {
+          useAuthStore.getState().setAccessToken(null);
+          window.location.href = "/login";
+        }
+      } else if (
+        error.response?.status === 400 &&
+        Array.isArray(error.response?.data?.message)
+      ) {
+        throw new ValidationError(error);
       }
+
+      return Promise.reject(error);
     }
-
-    return Promise.reject(error);
-  }
-);
-
+  );
 }

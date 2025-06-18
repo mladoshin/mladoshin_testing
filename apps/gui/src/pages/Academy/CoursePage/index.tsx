@@ -9,7 +9,6 @@ export const AcademyCoursePage = () => {
     course,
     lessons,
     loading,
-    error,
     onCloseLesson,
     onOpenLesson,
     openedLesson,
@@ -44,13 +43,11 @@ export const AcademyCoursePage = () => {
       </div>
 
       <h2 className="text-2xl font-bold text-black mt-10">Уроки курса</h2>
-      {!loading.lessons && (
-        <LessonList
-          lessons={lessons}
-          title="Уроки курса"
-          onClick={handleLessonClick}
-        />
-      )}
+      <LessonList
+        loading={loading.lessons}
+        lessons={lessons}
+        onClick={handleLessonClick}
+      />
 
       <LessonModal
         lesson={openedLesson as Lesson}

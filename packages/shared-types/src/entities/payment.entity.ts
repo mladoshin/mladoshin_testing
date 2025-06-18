@@ -1,7 +1,7 @@
 import { CourseEntity } from './course.entity';
 import { UserEntity } from './user.entity';
 
-export class PaymentEntity {
+export interface PaymentEntity {
   id: string;
   timestamp: string;
   amount: number;

@@ -1,6 +1,6 @@
 import { UserEntity } from "./user.entity";
 
-export class UserProfileEntity {
+export interface UserProfileEntity {
   id: string;
   first_name: string;
   last_name: string;

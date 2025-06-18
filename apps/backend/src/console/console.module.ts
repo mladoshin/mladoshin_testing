@@ -56,7 +56,7 @@ import { ErrorLoggerInterceptor } from 'src/common/logging/error-logger.intercep
   imports: [
     ConfigModule.forRoot({
       isGlobal: true,
-      envFilePath: '/Users/maksimladosin/Documents/BMSTU/PPO/app/.env',
+      envFilePath: '/Users/maksimladosin/Documents/BMSTU/PPO/apps/backend/.env',
     }),
     TypeOrmModule.forRootAsync({
       inject: [ConfigService],

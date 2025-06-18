@@ -8,17 +8,10 @@ export const AcademyAllCoursesPage = () => {
   const navigate = useNavigate();
   const { loading, error, courses, handleCourseAction } = useAcademyAllCoursesPageModel();
 
-  if (error)
+  if (error.fetch)
     return (
       <AcademyLayout>
-        <div className="text-red-600">{error}</div>
-      </AcademyLayout>
-    );
-
-  if (loading)
-    return (
-      <AcademyLayout>
-        <div className="text-black">Загрузка</div>
+        <div className="text-red-600">{error.fetch}</div>
       </AcademyLayout>
     );
 
@@ -30,6 +23,7 @@ export const AcademyAllCoursesPage = () => {
     <AcademyLayout>
       <h2 className="text-black text-2xl font-semibold mb-6">Мероприятия</h2>
       <CourseList
+        loading={loading}
         courses={courses}
         onCourseClick={handleCourseClick}
         handleCourseAction={handleCourseAction}

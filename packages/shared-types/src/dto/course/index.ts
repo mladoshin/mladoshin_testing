@@ -1,2 +1,2 @@
-export * from './course.request.dto.ts'
-export * from './course.response.dto.ts'
+export * from './course.request.dto'
+export * from './course.response.dto'

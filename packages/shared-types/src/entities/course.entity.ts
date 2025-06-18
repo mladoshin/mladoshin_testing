@@ -2,7 +2,7 @@ import { CourseEnrollmentEntity } from "./course-enrollment.entity";
 import { CourseLessonEntity } from "./course-lesson.entity";
 import { PaymentEntity } from "./payment.entity";
 
-export class CourseEntity {
+export interface CourseEntity {
   id: string;
   price: number;
   name: string;

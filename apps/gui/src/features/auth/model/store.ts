@@ -1,6 +1,6 @@
 import { create } from "zustand";
 import { authApi } from "./api";
-import { LoginUserDto, RegisterUserDto, UserEntity } from "@shared/types";
+import { LoginUserDto, RegisterUserDto, UserEntity, UserRole } from "@shared/types";
 import { User } from "@/entities/user/model/types";
 import { UserAdapter } from "@/entities/user/model/adapters";
 
@@ -12,12 +12,13 @@ interface AuthState {
   accessToken: string | null;
   setAccessToken: (token: string | null) => void;
   login: (data: LoginUserDto) => void;
-  logout: () => void;
+  logout: () => Promise<void>;
   register: (data: RegisterUserDto) => void;
-  fetchUser() : Promise<User | null>;
+  fetchUser(): Promise<User | null>;
+  isAdmin(): boolean
 }
 
-export const useAuthStore = create<AuthState>((set) => {
+export const useAuthStore = create<AuthState>((set, get) => {
   const token = localStorage.getItem("accessToken");
 
   return {
@@ -27,14 +28,19 @@ export const useAuthStore = create<AuthState>((set) => {
     accessToken: token,
     isAuthenticated: !!token,
 
+    isAdmin(){
+      return get().user?.role === UserRole.ADMIN;
+    },
+
     async fetchUser() {
+      set({ isLoading: true, error: null });
       try {
         const user = await authApi.getMe();
-        set({ user });
-        return UserAdapter.mapFromResponse(user)
+        set({ user, isLoading: false, error: null, isAuthenticated: true });
+        return UserAdapter.mapFromResponse(user);
       } catch (err: any) {
         console.error("❌ Failed to fetch user:", err);
-        set({ user: null, error: "Не удалось загрузить профиль" });
+        set({ user: null, error: "Не удалось загрузить профиль", isLoading: false, isAuthenticated: false });
         return null;
       }
     },

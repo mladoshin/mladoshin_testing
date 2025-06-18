@@ -1,6 +1,6 @@
 import { CourseEntity } from "./course.entity";
 
-export class CourseLessonEntity {
+export interface CourseLessonEntity {
   id: string;
   title: string;
   content: string;

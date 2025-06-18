@@ -1,21 +1,18 @@
-import { useEffect } from 'react';
-import { useNavigate, Outlet } from 'react-router-dom';
-import { useAuthStore } from '@/features/auth/model/store';
+import { useEffect, useState } from "react";
+import { useNavigate, Outlet } from "react-router-dom";
+import { useAuthStore } from "@/features/auth/model/store";
 
 export const PrivateRoute = () => {
   const navigate = useNavigate();
-  const {accessToken, fetchUser} = useAuthStore();
+  const { isLoading, fetchUser } = useAuthStore();
 
   useEffect(() => {
-    if (!accessToken) {
-      navigate('/login', { replace: true });
-    }else{
-      fetchUser()
-    }
-  }, [accessToken, navigate]);
+    fetchUser().then((u) => {
+      if (!u) navigate("/login", { replace: true });
+    });
+  }, []);
 
-  // Пока accessToken не проверен — ничего не рендерим
-  if (!accessToken) return null;
+  if (isLoading) return null;
 
   return <Outlet />;
 };

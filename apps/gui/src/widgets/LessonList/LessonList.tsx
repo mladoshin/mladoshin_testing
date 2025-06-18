@@ -1,13 +1,24 @@
 import { Lesson } from "@/entities/lesson/model/types";
 import { LessonCard } from "@/entities/lesson/ui/LessonCard";
+import { SpinnerIcon } from "@/shared/ui/SpinnerIcon";
 
 interface LessonListProps {
   lessons: Lesson[];
-  title?: string;
+  loading?: boolean;
   onClick?: (lesson: Lesson) => void;
 }
 
-export function LessonList({ lessons, onClick }: LessonListProps) {
+export function LessonList({ lessons, loading, onClick }: LessonListProps) {
+  if (loading) {
+    return (
+      <section className="py-6">
+        <div className="w-dull flex justify-center items-center gap-3 text-black">
+          <SpinnerIcon className="w-7 h-7 animate-spin" />
+        </div>
+      </section>
+    );
+  }
+
   return (
     <section className="py-6">
       {lessons.length === 0 ? (

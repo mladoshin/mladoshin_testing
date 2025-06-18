@@ -2,7 +2,7 @@ import { CourseEnrollmentStatus } from "../enums/course-enrollment-status.enum";
 import { CourseEntity } from "./course.entity";
 import { UserEntity } from "./user.entity";
 
-export class CourseEnrollmentEntity {
+export interface CourseEnrollmentEntity {
   id: string;
   user?: UserEntity | null;
   user_id: string;

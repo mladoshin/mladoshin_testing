@@ -13,7 +13,7 @@ export const AdminRoute = () => {
     } else {
       fetchUserAndValidate().then((hasAccess) => {
         if (!hasAccess) {
-          navigate("/forbidden", { replace: true });
+          navigate("/403", { replace: true });
         }
       });
     }

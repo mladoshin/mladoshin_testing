@@ -5,7 +5,7 @@ import { useState, useRef, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 
 export function UserDropdown() {
-  const { logout } = useAuthStore();
+  const { logout, isAdmin } = useAuthStore();
   const [open, setOpen] = useState(false);
   const ref = useRef<HTMLDivElement>(null);
   const navigate = useNavigate();
@@ -28,9 +28,14 @@ export function UserDropdown() {
     navigate("/profile");
   };
 
+  const handleAdmin = () => {
+    setOpen(false);
+    navigate("/admin");
+  };
+
   const handleLogout = () => {
     setOpen(false);
-    logout();
+    logout().then(() => navigate("/"));
   };
 
   return (
@@ -44,7 +49,15 @@ export function UserDropdown() {
       </button>
 
       {open && (
-        <div className="absolute right-0 top-12 z-10 w-40 rounded-md shadow-md bg-white border">
+        <div className="absolute right-0 top-12 z-10 w-52 rounded-md shadow-md bg-white border">
+          {isAdmin() && (
+            <button
+              onClick={handleAdmin}
+              className="block w-full text-left px-4 py-2 hover:bg-gray-100 text-sm text-gray-700"
+            >
+              Войти в админ панель
+            </button>
+          )}
           <button
             onClick={handleProfile}
             className="block w-full text-left px-4 py-2 hover:bg-gray-100 text-sm text-gray-700"
