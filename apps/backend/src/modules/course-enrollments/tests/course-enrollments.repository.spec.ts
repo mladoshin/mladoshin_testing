@@ -13,6 +13,7 @@ import { CourseLesson } from 'src/modules/lessons/entities/course-lesson.entity'
 import { DataSource } from 'typeorm';
 import { CourseEnrollmentStatus } from '../types/course-enrollments.types';
 import { CourseEnrollment } from '../entities/course-enrollment.entity';
+import { CourseEnrollmentDomain } from '../domains/course-enrollment.domain';
 
 describe('CourseEnrollmentRepo (integration)', () => {
   let module: TestingModule;
@@ -125,7 +126,7 @@ describe('CourseEnrollmentRepo (integration)', () => {
       course.id,
       CourseEnrollmentStatus.PAID,
     );
-    expect(updated.status).toBe(CourseEnrollmentStatus.PAID);
+    expect((updated as CourseEnrollmentDomain).status).toBe(CourseEnrollmentStatus.PAID);
   });
 
   it('should find enrollment by id', async () => {

@@ -63,7 +63,8 @@ export class CourseEnrollmentRepo implements ICourseEnrollmentRepo {
     }
     courseEnrollment.status = status;
     try {
-      return this.repository.save(courseEnrollment);
+      await this.repository.save(courseEnrollment);
+      return courseEnrollment;
     } catch (err) {
       throw new RepositoryUnknownError(err.message, CourseEnrollmentRepo.name);
     }

@@ -77,7 +77,7 @@ export class RegisterCourseCommand extends CommandRunner {
   }
 }
 
-// pnpm run console course:create --name "Курс 2" --price 100 --start "2025-01-01" --finish "2025-01-10"
+// pnpm run console course:create --name "Курс 4" --price 100 --start "2025-01-01" --finish "2025-01-10"
 @Command({ name: 'course:create', description: 'Создать новый курс' })
 export class CreateCourseCommand extends CommandRunner {
   constructor(
