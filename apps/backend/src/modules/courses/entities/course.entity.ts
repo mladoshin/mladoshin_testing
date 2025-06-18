@@ -2,6 +2,7 @@ import { Column, Entity, OneToMany, PrimaryGeneratedColumn } from 'typeorm';
 import { CourseLesson } from '../../lessons/entities/course-lesson.entity';
 import { Payment } from 'src/modules/payments/entities/payment.entity';
 import { CourseEnrollment } from 'src/modules/course-enrollments/entities/course-enrollment.entity';
+import { UserAvailability } from 'src/modules/user-availability/entities/user-availability.entity';
 
 @Entity('course')
 export class Course {
@@ -35,4 +36,10 @@ export class Course {
     (courseEnrollment) => courseEnrollment.course,
   )
   courseEnrollments?: CourseEnrollment[];
+
+  @OneToMany(
+    () => UserAvailability,
+    (userAvailability) => userAvailability.course,
+  )
+  availabilities?: UserAvailability[];
 }

@@ -9,6 +9,7 @@ import {
 import { UserProfile } from './user-profile.entity';
 import { Payment } from 'src/modules/payments/entities/payment.entity';
 import { CourseEnrollment } from 'src/modules/course-enrollments/entities/course-enrollment.entity';
+import { UserAvailability } from 'src/modules/user-availability/entities/user-availability.entity';
 
 export enum UserRole {
   USER = 'user',
@@ -32,7 +33,7 @@ export class User {
   @OneToOne(() => UserProfile, (profile) => profile.user, {
     eager: true,
     cascade: true,
-    onDelete: 'CASCADE'
+    onDelete: 'CASCADE',
   })
   @JoinColumn({ name: 'profile_id' })
   profile: UserProfile;
@@ -43,6 +44,15 @@ export class User {
   @OneToMany(() => Payment, (payment) => payment.user)
   payments?: Payment[];
 
-  @OneToMany(() => CourseEnrollment, (courseEnrollment) => courseEnrollment.user)
+  @OneToMany(
+    () => CourseEnrollment,
+    (courseEnrollment) => courseEnrollment.user,
+  )
   courseEnrollments?: CourseEnrollment[];
+
+  @OneToMany(
+    () => UserAvailability,
+    (userAvailability) => userAvailability.user,
+  )
+  availabilities: UserAvailability[];
 }

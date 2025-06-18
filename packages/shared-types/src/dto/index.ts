@@ -3,3 +3,4 @@ export * from './user';
 export * from './course';
 export * from './lesson';
 export * from './course-enrollment';
+export * from './user-availability';

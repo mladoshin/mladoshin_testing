@@ -10,10 +10,9 @@ import { TypeOrmModule } from '@nestjs/typeorm';
 import { ConfigModule, ConfigService } from '@nestjs/config';
 import { BcryptService } from './common/services/HashService';
 import { TokenService } from './common/services/TokenService';
-import { CourseCommands, ListCourseCommand } from './console/commands/course.commands';
-import { AppLoggerService } from './common/logging/log.service';
 import { ErrorLoggerInterceptor } from './common/logging/error-logger.interceptor';
 import { AppLoggerModule } from './common/logging/log.module';
+import { UserAvailabilityModule } from './modules/user-availability/user-availability.module';
 
 @Module({
   imports: [
@@ -37,7 +36,8 @@ import { AppLoggerModule } from './common/logging/log.module';
     CoursesModule,
     PaymentsModule,
     LessonsModule,
-    AppLoggerModule
+    UserAvailabilityModule,
+    AppLoggerModule,
   ],
   controllers: [AppController],
   providers: [AppService, BcryptService, TokenService, ErrorLoggerInterceptor],
