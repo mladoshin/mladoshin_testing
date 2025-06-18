@@ -141,7 +141,7 @@ export class ListCourseCommand extends CommandRunner {
   }
 }
 
-// pnpm run console course:enrollments
+// pnpm run console course:enrollments d279f85c-9eda-469c-9e26-de79dce92638
 @Command({
   name: 'course:enrollments',
   description: 'Показать всех участников',

@@ -6,7 +6,7 @@ import type {
   UpdateLessonRequestDto,
   CreateLessonRequestDto,
 } from "@shared/types";
-import { ValidationError } from "@/shared/api/errors";
+import { ForbiddenError, ValidationError } from "@/shared/api/errors";
 
 interface LessonStore {
   lessons: Lesson[];
@@ -151,6 +151,7 @@ export const useLessonStore = create<LessonStore>((set, get) => ({
       set({ lessons: mapped });
       lessons = mapped;
     } catch (e: any) {
+      debugger;
       console.error("Ошибка загрузки уроков", e);
       get().setError("fetch", e?.message ?? "Ошибка загрузки урока");
     }

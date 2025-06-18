@@ -5,16 +5,30 @@ import { SpinnerIcon } from "@/shared/ui/SpinnerIcon";
 interface LessonListProps {
   lessons: Lesson[];
   loading?: boolean;
+  error?: string | null;
   onClick?: (lesson: Lesson) => void;
 }
 
-export function LessonList({ lessons, loading, onClick }: LessonListProps) {
+export function LessonList({
+  lessons,
+  loading,
+  error,
+  onClick,
+}: LessonListProps) {
   if (loading) {
     return (
       <section className="py-6">
         <div className="w-dull flex justify-center items-center gap-3 text-black">
           <SpinnerIcon className="w-7 h-7 animate-spin" />
         </div>
+      </section>
+    );
+  }
+
+  if (error) {
+    return (
+      <section className="py-6">
+        <span className="text-red-500">{error}</span>
       </section>
     );
   }

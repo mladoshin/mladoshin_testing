@@ -36,3 +36,10 @@ export class ValidationError extends Error {
     return result;
   }
 }
+
+export class ForbiddenError extends Error {
+  constructor(rawError: any) {
+    super(rawError.response.data.message);
+    this.name = 'ForbiddenError';
+  }
+}

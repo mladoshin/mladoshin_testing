@@ -2,7 +2,7 @@
 import { AxiosInstance } from "axios";
 import { useAuthStore } from "@/features/auth/model/store";
 import { authApi } from "@/features/auth/model/api";
-import { ValidationError } from "./errors";
+import { ForbiddenError, ValidationError } from "./errors";
 
 export function setupInterceptors(instance: AxiosInstance) {
   instance.interceptors.request.use((config) => {
@@ -47,6 +47,8 @@ export function setupInterceptors(instance: AxiosInstance) {
         Array.isArray(error.response?.data?.message)
       ) {
         throw new ValidationError(error);
+      } else if (error.response?.status === 403) {
+        throw new ForbiddenError(error);
       }
 
       return Promise.reject(error);

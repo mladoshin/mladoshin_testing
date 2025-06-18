@@ -68,7 +68,7 @@ import { ErrorLoggerInterceptor } from 'src/common/logging/error-logger.intercep
         username: configService.getOrThrow('POSTGRES_USER'),
         database: configService.getOrThrow('POSTGRES_DB'),
         autoLoadEntities: true,
-        logging: true,
+        logging: false,
         entities: [
           '/Users/maksimladosin/Documents/BMSTU/PPO/app/**/*.entity{.ts,.js}',
         ],
