@@ -30,4 +30,7 @@ export class CourseLesson {
 
   @Column({ type: 'uuid' })
   course_id: string;
+
+  @Column({type: "int", unsigned: true, default: 0})
+  duration: number;
 }

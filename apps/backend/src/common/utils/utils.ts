@@ -14,8 +14,26 @@ export function getTestingDatabaseConfig(configService: ConfigService) {
     username: configService.getOrThrow('POSTGRES_USER'),
     database: configService.getOrThrow('POSTGRES_DB'),
     type: 'postgres',
-    entities: [User, CourseEnrollment, Course, CourseLesson, Payment, UserProfile],
+    entities: [
+      User,
+      CourseEnrollment,
+      Course,
+      CourseLesson,
+      Payment,
+      UserProfile,
+    ],
     synchronize: true,
     dropSchema: true, // IMPORTANT: resets DB for each run
   };
+}
+
+export function getDurationInMinutes(startTime: string, endTime: string): number {
+  const [sh, sm, ss] = startTime.split(':').map(Number);
+  const [eh, em, es] = endTime.split(':').map(Number);
+
+  const startDate = new Date(2000, 0, 1, sh, sm, ss);
+  const endDate = new Date(2000, 0, 1, eh, em, es);
+
+  const diffMs = endDate.getTime() - startDate.getTime();
+  return diffMs / 60000; // миллисекунды → минуты
 }

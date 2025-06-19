@@ -7,4 +7,5 @@ export class CourseLessonDomain {
   date: string;
   course: CourseDomain;
   course_id: string;
+  duration: number;
 }

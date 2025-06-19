@@ -10,6 +10,7 @@ export class CourseLessonMapper {
       date: lesson.date,
       course_id: lesson.course_id,
       course: lesson.course,
+      duration: lesson.duration,
     };
   }
 }

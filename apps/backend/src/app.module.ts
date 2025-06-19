@@ -13,6 +13,7 @@ import { TokenService } from './common/services/TokenService';
 import { ErrorLoggerInterceptor } from './common/logging/error-logger.interceptor';
 import { AppLoggerModule } from './common/logging/log.module';
 import { UserAvailabilityModule } from './modules/user-availability/user-availability.module';
+import { UserScheduleModule } from './modules/user-schedule/user-schedule.module';
 
 @Module({
   imports: [
@@ -37,6 +38,7 @@ import { UserAvailabilityModule } from './modules/user-availability/user-availab
     PaymentsModule,
     LessonsModule,
     UserAvailabilityModule,
+    UserScheduleModule,
     AppLoggerModule,
   ],
   controllers: [AppController],

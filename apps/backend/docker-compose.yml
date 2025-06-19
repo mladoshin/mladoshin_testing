@@ -13,7 +13,9 @@ services:
       - cache:/data
   postgres:
     container_name: school_postgres
-    image: postgres:15.3-alpine
+    build:
+      context: .
+      dockerfile: ./docker/Dockerfile.postgres
     restart: always
     env_file: ".env"
     environment:
@@ -26,6 +28,8 @@ services:
     volumes:
       - pgdata:/var/lib/postgresql/data
       - ./pg-dump:/docker-entrypoint-initdb.d
+      - ./src/modules/user-schedule/pg-function/function.sql:/function.sql
+
 volumes:
   pgdata:
   cache:
