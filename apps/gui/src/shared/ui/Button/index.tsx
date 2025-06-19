@@ -27,7 +27,7 @@ export const Button: React.FC<ButtonProps> = ({
       type={type}
       onClick={onClick}
       disabled={disabled || loading}
-      className={`w-full text-center cursor-pointer inline-flex items-center justify-center gap-2 px-4 py-2 rounded text-white bg-blue-600 hover:bg-blue-700 disabled:bg-gray-400 transition ${className}`}
+      className={`w-full text-center cursor-pointer inline-flex items-center justify-center gap-2 px-4 py-2 rounded-lg text-white bg-blue-600 hover:bg-blue-700 disabled:bg-gray-400 transition ${className}`}
     >
       {loading ? (
         <SpinnerIcon className="w-5 h-5 animate-spin" />

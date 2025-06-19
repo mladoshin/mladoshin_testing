@@ -23,8 +23,10 @@ export interface IUserAvailabilityRepo {
   delete(id: string): Promise<UserAvailabilityDomain>;
   findById(id: string): Promise<UserAvailabilityDomain | null>;
   findOrFailById(id: string): Promise<UserAvailabilityDomain>;
-  findAllByUser(userId: string): Promise<UserAvailabilityDomain[]>;
-  findAllByCourse(courseId: string): Promise<UserAvailabilityDomain[]>;
+  findAllByUserAndCourse(
+    userId: string,
+    courseId: string,
+  ): Promise<UserAvailabilityDomain[]>;
   findAll(): Promise<UserAvailabilityDomain[]>;
 }
 
@@ -38,7 +40,7 @@ export class UserAvailabilityRepo implements IUserAvailabilityRepo {
   async create(userId: string, dto: CreateUserAvailabilityDto) {
     const entity = this.repository.create({
       user_id: userId,
-      ...dto
+      ...dto,
     });
 
     try {
@@ -81,7 +83,10 @@ export class UserAvailabilityRepo implements IUserAvailabilityRepo {
   }
 
   async findOrFailById(id: string) {
-    const found = await this.repository.findOne({ where: { id } });
+    const found = await this.repository.findOne({
+      where: { id },
+      relations: { user: true, course: true },
+    });
     if (!found) {
       throw new RepositoryNotFoundError(
         'UserAvailability not found',
@@ -91,17 +96,9 @@ export class UserAvailabilityRepo implements IUserAvailabilityRepo {
     return UserAvailabilityMapper.toDomainEntity(found);
   }
 
-  async findAllByUser(userId: string) {
+  async findAllByUserAndCourse(userId: string, courseId: string) {
     const items = await this.repository.find({
-      where: { user: { id: userId } },
-      relations: { user: true, course: true },
-    });
-    return items.map(UserAvailabilityMapper.toDomainEntity);
-  }
-
-  async findAllByCourse(courseId: string) {
-    const items = await this.repository.find({
-      where: { course: { id: courseId } },
+      where: { user_id: userId, course_id: courseId },
       relations: { user: true, course: true },
     });
     return items.map(UserAvailabilityMapper.toDomainEntity);

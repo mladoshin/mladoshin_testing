@@ -13,6 +13,7 @@ import AdminDashboardPage from "@/pages/Admin/DashboardPage";
 import { AdminCoursePage } from "@/pages/Admin/CoursePage";
 import ForbiddenPage from "@/pages/Error/ForbiddenPage";
 import NotFoundPage from "@/pages/Error/NotFoundPage";
+import SchedulePage from "@/pages/Academy/SchedulePage";
 
 export const appRouter = createBrowserRouter([
   {
@@ -36,6 +37,8 @@ export const appRouter = createBrowserRouter([
       { path: "/academy", element: <AcademyAllCoursesPage /> },
       { path: "/academy/courses", element: <AcademyAllCoursesPage /> },
       { path: "/academy/courses/:id", element: <AcademyCoursePage /> },
+      { path: "/academy/courses/:id/schedule", element: <SchedulePage /> },
+
       {
         path: "/academy/courses/:id/about",
         element: <AcademyAboutCoursePage />,

@@ -3,8 +3,11 @@ import { useAcademyCoursePageModel } from "./model";
 import { AcademyLayout } from "@/layouts/AcademyLayout/AcademyLayout";
 import { Lesson } from "@/entities/lesson/model/types";
 import { LessonModal } from "@/widgets/LessonModal/LessonModal";
+import { Button } from "@/shared/ui/Button";
+import { useNavigate } from "react-router-dom";
 
 export const AcademyCoursePage = () => {
+  const navigate = useNavigate();
   const {
     course,
     lessons,
@@ -33,14 +36,23 @@ export const AcademyCoursePage = () => {
     onOpenLesson(lesson);
   };
 
+  const onScheduleButtonClick = () => {
+    navigate("schedule");
+  };
+
   return (
     <AcademyLayout>
-      <div className="space-y-4">
-        <h1 className="text-3xl font-bold text-black">{course.name}</h1>
-        <p className="text-gray-700 whitespace-pre-line">
-          {course.startDate.toLocaleDateString()} —{" "}
-          {course.endDate.toLocaleDateString()}
-        </p>
+      <div className="flex flex-row gap-4 items-start justify-between">
+        <div className="space-y-4">
+          <h1 className="text-3xl font-bold text-black">{course.name}</h1>
+          <p className="text-gray-700 whitespace-pre-line">
+            {course.startDate.toLocaleDateString()} —{" "}
+            {course.endDate.toLocaleDateString()}
+          </p>
+        </div>
+        <Button onClick={onScheduleButtonClick} className="!w-[150px] text-sm">
+          Расписание
+        </Button>
       </div>
 
       <h2 className="text-2xl font-bold text-black mt-10">Уроки курса</h2>
