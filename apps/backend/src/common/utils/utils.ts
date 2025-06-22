@@ -3,6 +3,8 @@ import { CourseEnrollment } from 'src/modules/course-enrollments/entities/course
 import { Course } from 'src/modules/courses/entities/course.entity';
 import { CourseLesson } from 'src/modules/lessons/entities/course-lesson.entity';
 import { Payment } from 'src/modules/payments/entities/payment.entity';
+import { UserAvailability } from 'src/modules/user-availability/entities/user-availability.entity';
+import { UserSchedule } from 'src/modules/user-schedule/entities/user-schedule.entity';
 import { UserProfile } from 'src/modules/users/entities/user-profile.entity';
 import { User } from 'src/modules/users/entities/user.entity';
 
@@ -21,6 +23,8 @@ export function getTestingDatabaseConfig(configService: ConfigService) {
       CourseLesson,
       Payment,
       UserProfile,
+      UserAvailability,
+      UserSchedule
     ],
     synchronize: true,
     dropSchema: true, // IMPORTANT: resets DB for each run

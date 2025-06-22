@@ -54,5 +54,5 @@ export class User {
     () => UserAvailability,
     (userAvailability) => userAvailability.user,
   )
-  availabilities: UserAvailability[];
+  availabilities?: UserAvailability[];
 }

@@ -3,4 +3,8 @@ export interface GenerateUserScheduleResponseDto {
   scheduled_date: string;
   start_time: string;
   end_time: string;
+  title: string;
+  date: string;
+  duration: number;
+  content: string;
 }

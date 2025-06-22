@@ -6,6 +6,7 @@ import { UserScheduleDomain } from './domains/user-schedule.domain';
 import { GenerateUserScheduleResponseDto } from './dto/generate-schedule-response.dto';
 import { UserSchedule } from './entities/user-schedule.entity';
 import dayjs from 'dayjs';
+import { Course } from '../courses/entities/course.entity';
 
 export class UserScheduleMapper {
   static fromFunctionToDomainEntity(
@@ -13,13 +14,26 @@ export class UserScheduleMapper {
     courseId: string,
     userId: string,
   ): UserScheduleDomain {
-    const duration = getDurationInMinutes(functionEntity.start_time, functionEntity.end_time)
+    const duration = getDurationInMinutes(
+      functionEntity.start_time,
+      functionEntity.end_time,
+    );
+    const lesson = CourseLessonMapper.toDomainEntity({
+      id: functionEntity.lesson_id,
+      course_id: courseId,
+      title: functionEntity.title,
+      course: null as any,
+      content: functionEntity.content,
+      date: functionEntity.date,
+      duration: functionEntity.duration,
+    });
 
-    return { 
+    return {
       id: 'not_created',
       user_id: userId,
       course_id: courseId,
       lesson_id: functionEntity.lesson_id,
+      lesson: lesson,
       scheduled_date: functionEntity.scheduled_date,
       duration: duration,
       start_time: functionEntity.start_time,

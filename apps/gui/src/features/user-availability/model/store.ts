@@ -4,7 +4,6 @@ import type { UserAvailability } from "@/entities/user-availability/model/types"
 import type {
   ICreateUserAvailabilityDto,
   IUpdateUserAvailabilityDto,
-  IUserAvailabilityResponse,
 } from "@shared/types";
 import { ValidationError } from "@/shared/api/errors";
 import { UserAvailabilityAdapter } from "@/entities/user-availability/model/adapters";
@@ -137,10 +136,6 @@ export const useUserAvailabilityStore = create<UserAvailabilityStore>(
       get().setError("update", null);
       let availability: UserAvailability | null = null;
       try {
-        //debugger;
-        //data.start_time = data.start_time?.substring(5);
-        //data.end_time = data.end_time?.substring(5);
-
         const result = await userAvailabilityApi.update(id, data);
         availability = UserAvailabilityAdapter.mapFromResponse(result);
         set((state) => ({

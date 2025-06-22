@@ -1,6 +1,6 @@
 import { Inject, Injectable } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
-import { DataSource, Repository } from 'typeorm';
+import { DataSource, In, Repository } from 'typeorm';
 import {
   RepositoryNotFoundError,
   RepositoryUnknownError,
@@ -23,6 +23,7 @@ export interface IUserScheduleRepo {
     userId: string,
     courseId: string,
   ): Promise<UserScheduleDomain[]>;
+  deleteByUserAndCourse(userId: string, courseId: string): Promise<boolean>;
 }
 
 @Injectable()
@@ -50,7 +51,8 @@ export class UserScheduleRepo implements IUserScheduleRepo {
     }
     const result: GenerateUserScheduleResponseDto[] =
       await this.dataSource.query(
-        `SELECT * FROM pick_student_schedule($1::uuid, $2::uuid);`,
+        `SELECT *, l.title, l.date, l.duration FROM pick_student_schedule($1::uuid, $2::uuid) as s
+        JOIN course_lesson l ON l.id = s.lesson_id;`,
         [userId, courseId],
       );
     return result.map((item) =>
@@ -72,6 +74,7 @@ export class UserScheduleRepo implements IUserScheduleRepo {
     const rawEntities = await this.repository.find({
       where: { user_id: userId, course_id: courseId },
       order: { scheduled_date: 'ASC', start_time: 'asc' },
+      relations: { lesson: true },
     });
     if (rawEntities.length === 0) {
       throw new RepositoryNotFoundError(
@@ -83,6 +86,25 @@ export class UserScheduleRepo implements IUserScheduleRepo {
     return rawEntities.map(UserScheduleMapper.toDomainEntity);
   }
 
+  async deleteByUserAndCourse(
+    userId: string,
+    courseId: string,
+  ): Promise<boolean> {
+    const doesCourseExist = await this.dataSource
+      .getRepository(Course)
+      .existsBy({ id: courseId });
+    if (!doesCourseExist) {
+      throw new RepositoryNotFoundError('Такого курса нет.', Course.name);
+    }
+
+    await this.repository.delete({
+      course_id: courseId,
+      user_id: userId,
+    });
+
+    return true;
+  }
+
   async create(
     userId: string,
     dataItems: CreateUserScheduleDto[],
@@ -91,6 +113,11 @@ export class UserScheduleRepo implements IUserScheduleRepo {
       dataItems.map((di) => ({ ...di, user_id: userId })),
     );
     const rawEntities = await this.repository.save(entities);
-    return rawEntities.map(UserScheduleMapper.toDomainEntity);
+    const ids = rawEntities.map((e) => e.id);
+    const entitiesWithLessons = await this.repository.find({
+      where: { id: In(ids) },
+      relations: { lesson: true },
+    });
+    return entitiesWithLessons.map(UserScheduleMapper.toDomainEntity);
   }
 }

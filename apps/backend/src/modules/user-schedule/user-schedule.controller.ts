@@ -6,6 +6,7 @@ import {
   Inject,
   UseGuards,
   Query,
+  Delete,
 } from '@nestjs/common';
 import { GenerateUserScheduleDto } from './dto/generate-user-schedule.dto';
 import { JwtAuthGuard, JWTPayload } from '../auth/guards/AuthGuard';
@@ -15,10 +16,11 @@ import { UserScheduleResponse } from './dto/user-schedule-response.dto';
 import { CreateUserScheduleArrayDto } from './dto/create-user-schedule.dto';
 import { GetUserScheduleQueryDto } from './dto/get-user-schedule-query.dto';
 import { IUserScheduleService } from './user-schedule.service';
+import { DeleteUserScheduleQueryDto } from './dto/delete-user-schedule-query.dto';
 
 @Controller('user-schedule')
 @UseGuards(JwtAuthGuard)
-export class UserAvailabilityController {
+export class UserScheduleController {
   constructor(
     @Inject('IUserScheduleService')
     private readonly service: IUserScheduleService,
@@ -49,5 +51,14 @@ export class UserAvailabilityController {
   ) {
     const result = await this.service.getByUserAndCourse(user, query);
     return result ? UserScheduleResponse.collection(result) : null;
+  }
+
+  @Delete()
+  async deleteUserSchedule(
+    @User() user: JWTPayload,
+    @Query() query: DeleteUserScheduleQueryDto,
+  ) {
+    const result = await this.service.deleteByUserAndCourse(user, query);
+    return { success: result };
   }
 }

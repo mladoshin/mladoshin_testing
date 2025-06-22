@@ -24,7 +24,6 @@ def parse_time(tstr):
 def overlaps(a_start, a_end, b_start, b_end):
     return a_start < b_end and b_start < a_end
 
-# Получение дат начала и конца курса
 course_info = plpy.execute(f"""
   SELECT date_start, date_finish
   FROM course
@@ -36,14 +35,12 @@ if not course_info:
 start_date = parse_datetime_with_tz(course_info[0]['date_start']).date()
 end_date = parse_datetime_with_tz(course_info[0]['date_finish']).date()
 
-# Получение расписания пользователя
 availability = plpy.execute(f"""
   SELECT week_day, start_time, end_time
   FROM user_availability
   WHERE user_id = '{p_student_id}' AND course_id = '{p_course_id}'
 """)
 
-# Получение уроков курса
 lessons = plpy.execute(f"""
   SELECT id, date, duration
   FROM course_lesson

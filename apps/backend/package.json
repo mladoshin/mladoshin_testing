@@ -7,6 +7,7 @@
   "license": "UNLICENSED",
   "scripts": {
     "pg:update-function": "export $(grep -v '^#' .env | xargs) && ./scripts/update_pg_function.sh",
+    "pg:update-test-function": "export $(grep -v '^#' .env.test | xargs) && ./scripts/update_pg_function.sh",
     "build": "nest build",
     "format": "prettier --write \"src/**/*.ts\" \"test/**/*.ts\"",
     "start": "nest start",

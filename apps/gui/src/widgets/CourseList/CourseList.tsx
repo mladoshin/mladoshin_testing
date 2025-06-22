@@ -23,7 +23,7 @@ export function CourseList({
   if (loading) {
     return (
       <section className="py-6">
-        <div className="w-dull flex justify-center items-center gap-3 text-black">
+        <div className="w-full flex justify-center items-center gap-3 text-black">
           <SpinnerIcon className="w-7 h-7 animate-spin" />
         </div>
       </section>

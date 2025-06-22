@@ -1,5 +1,6 @@
 import UserAvailabilityForm from "@/features/user-availability/edit/ui/UserAvailabilityForm";
 import { AcademyLayout } from "@/layouts/AcademyLayout/AcademyLayout";
+import { CourseSchedule } from "@/widgets/CourseSchedule";
 import React from "react";
 import { useParams } from "react-router-dom";
 
@@ -16,6 +17,7 @@ function SchedulePage() {
       <h2 className="text-2xl font-bold text-black mt-10 nb-5">
         Персональное расписание
       </h2>
+      <CourseSchedule courseId={id} />
     </AcademyLayout>
   );
 }

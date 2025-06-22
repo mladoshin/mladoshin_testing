@@ -6,6 +6,7 @@ import { ErrorMapper } from 'src/common/errors/error-mapper';
 import { UserScheduleDomain } from './domains/user-schedule.domain';
 import { CreateUserScheduleArrayDto } from './dto/create-user-schedule.dto';
 import { GetUserScheduleQueryDto } from './dto/get-user-schedule-query.dto';
+import { DeleteUserScheduleQueryDto } from './dto/delete-user-schedule-query.dto';
 
 export interface IUserScheduleService {
   generate(
@@ -20,6 +21,10 @@ export interface IUserScheduleService {
     user: JWTPayload,
     query: GetUserScheduleQueryDto,
   ): Promise<UserScheduleDomain[]>;
+  deleteByUserAndCourse(
+    user: JWTPayload,
+    query: DeleteUserScheduleQueryDto,
+  ): Promise<boolean>;
 }
 
 @Injectable()
@@ -54,6 +59,21 @@ export class UserScheduleService implements IUserScheduleService {
         query.course_id,
       );
       return entities;
+    } catch (err) {
+      throw ErrorMapper.mapToHTTPError(err);
+    }
+  }
+
+  async deleteByUserAndCourse(
+    user: JWTPayload,
+    query: DeleteUserScheduleQueryDto,
+  ) {
+    try {
+      const result = await this.repo.deleteByUserAndCourse(
+        user.id,
+        query.course_id,
+      );
+      return result;
     } catch (err) {
       throw ErrorMapper.mapToHTTPError(err);
     }
