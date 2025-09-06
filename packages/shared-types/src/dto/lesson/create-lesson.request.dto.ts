@@ -3,4 +3,5 @@ export interface CreateLessonRequestDto {
   title: string;
   content: string;
   date: string;
+  duration: number;
 }

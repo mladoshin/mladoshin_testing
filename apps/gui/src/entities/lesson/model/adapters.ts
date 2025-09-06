@@ -9,5 +9,6 @@ export class LessonAdapter {
     date: new Date(res.date),
     //course: res.course,
     course_id: res.course_id,
+    duration: res.duration,
   });
 }

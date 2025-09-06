@@ -1,8 +1,11 @@
 import {
   IsDateString,
+  IsInt,
   IsNotEmpty,
+  IsNumber,
   IsString,
   IsUUID,
+  Min,
   MinLength,
 } from 'class-validator';
 import { CreateLessonRequestDto } from '@shared/types';
@@ -24,4 +27,9 @@ export class CreateLessonDto implements CreateLessonRequestDto{
 
   @IsDateString()
   date: string;
+
+  @IsNumber()
+  @IsInt()
+  @Min(0)
+  duration: number;
 }

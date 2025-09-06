@@ -20,6 +20,7 @@ export class CreateLessonCommand extends CommandRunner {
       title: options.title,
       content: options.content,
       date: options.date,
+      duration: options.duration
     };
 
     const lesson = await this.lessonsService.create(dto);
@@ -44,6 +45,11 @@ export class CreateLessonCommand extends CommandRunner {
   @Option({ flags: '-d, --date <date>', description: 'Lesson date (ISO)' })
   parseDate(val: string) {
     return val;
+  }
+
+  @Option({ flags: '-l, --duration <duration>', description: 'Lesson duration in minutes' })
+  parseDuration(val: string) {
+    return +val;
   }
 }
 

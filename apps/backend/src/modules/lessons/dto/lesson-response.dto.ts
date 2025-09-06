@@ -11,6 +11,7 @@ export class CourseLessonResponse implements LessonResponse {
   course: CourseResponse;
   date: string;
   title: string;
+  duration: number;
   
   constructor(lesson: CourseLessonDomain) {
     const rest = instanceToPlain(lesson) as CourseLesson;

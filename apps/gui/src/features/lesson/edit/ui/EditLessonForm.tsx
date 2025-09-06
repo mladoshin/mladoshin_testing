@@ -19,6 +19,7 @@ export const EditLessonForm: React.FC<LessonFormProps> = ({
   const [date, setDate] = useState(
     new Date(lesson.date).toISOString().slice(0, 10)
   );
+  const [duration, setDuration] = useState(lesson.duration);
   const [content, setContent] = useState(lesson.content);
 
   const { updateLesson, deleteLesson, loading, error } =
@@ -29,6 +30,7 @@ export const EditLessonForm: React.FC<LessonFormProps> = ({
       title,
       content,
       date: new Date(date).toISOString(),
+      duration,
     });
     if (updatedLesson) {
       onClose();
@@ -60,6 +62,15 @@ export const EditLessonForm: React.FC<LessonFormProps> = ({
         label="Дата"
         placeholder="Введите дату урока"
         type="date"
+      />
+
+      <Input
+        min={0}
+        value={duration}
+        onChange={(e) => setDuration(+e.target.value)}
+        label="Длительность, мин"
+        placeholder="Введите длительность урока"
+        type="number"
       />
 
       <TextArea

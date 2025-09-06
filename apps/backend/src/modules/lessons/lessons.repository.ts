@@ -80,6 +80,7 @@ export class CourseLessonRepo implements ICourseLessonRepo {
   async findAllByCourse(courseId: string) {
     const lessonDBEntities = await this.repository.find({
       where: { course_id: courseId },
+      order: {date: "asc"}
     });
     return lessonDBEntities.map((lessonDBEntity) =>
       CourseLessonMapper.toDomainEntity(lessonDBEntity),

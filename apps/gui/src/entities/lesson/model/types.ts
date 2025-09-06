@@ -7,4 +7,5 @@ export interface Lesson {
   date: Date;
   course?: Course;
   course_id: string;
+  duration: number;
 }

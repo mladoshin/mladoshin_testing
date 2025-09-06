@@ -1,6 +1,4 @@
 import { useState } from "react";
-import { TrashIcon } from "@heroicons/react/24/outline";
-import { Lesson } from "@/entities/lesson/model/types";
 import { Input } from "@/shared/ui/Input";
 import { TextArea } from "@/shared/ui/TextArea/TextArea";
 import { Button } from "@/shared/ui/Button";
@@ -19,6 +17,7 @@ export const CreateLessonForm: React.FC<LessonFormProps> = ({
   const { createLesson, loading, error } = useCreateLessonFormModel();
   const [title, setTitle] = useState("");
   const [date, setDate] = useState(new Date().toISOString().slice(0, 10));
+  const [duration, setDuration] = useState(60);
   const [content, setContent] = useState("");
 
   const handleSave = async () => {
@@ -28,6 +27,7 @@ export const CreateLessonForm: React.FC<LessonFormProps> = ({
       title,
       content,
       date: new Date(date).toISOString(),
+      duration,
     });
     if (lesson) {
       onClose();
@@ -52,6 +52,15 @@ export const CreateLessonForm: React.FC<LessonFormProps> = ({
         label="Дата"
         placeholder="Введите дату урока"
         type="date"
+      />
+
+      <Input
+        min={0}
+        value={duration}
+        onChange={(e) => setDuration(+e.target.value)}
+        label="Длительность, мин"
+        placeholder="Введите длительность урока"
+        type="number"
       />
 
       <TextArea

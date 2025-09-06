@@ -7,4 +7,5 @@ export interface LessonResponse {
   date: string;
   course: CourseResponse;
   course_id: string;
+  duration: number;
 }
