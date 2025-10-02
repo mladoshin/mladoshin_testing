@@ -6,6 +6,8 @@ import {
   Res,
   UseGuards,
   Inject,
+  HttpCode,
+  Query,
 } from '@nestjs/common';
 import { IAuthService } from './auth.service';
 import { LoginUserDto } from './dto/login.dto';
@@ -25,6 +27,7 @@ export class AuthController {
   ) {}
 
   @Post('login')
+  @HttpCode(200)
   @AccessLog()
   async login(
     @Body() loginUserDto: LoginUserDto,
@@ -36,7 +39,7 @@ export class AuthController {
 
   @Get('check')
   @AccessLog()
-  async checkUserByEmail(@Body() data: any) {
+  async checkUserByEmail(@Query() data: any) {
     const result = await this.authService.check(data.email as string);
     return { result };
   }
@@ -60,6 +63,7 @@ export class AuthController {
   }
 
   @Post('logout')
+  @HttpCode(200)
   @AccessLog()
   logout(@Res({ passthrough: true }) res: Response): AuthResponse {
     const tokenPair: TokenPair = { accessToken: '', refreshToken: '' };

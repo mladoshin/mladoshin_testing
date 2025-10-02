@@ -51,20 +51,20 @@ export class CourseEnrollmentRepo implements ICourseEnrollmentRepo {
     courseId: string,
     status: CourseEnrollmentStatus,
   ) {
-    const courseEnrollment = await this.findOneByUserAndCourse(
+    const courseEnrollmentDomain = await this.findOneByUserAndCourse(
       userId,
       courseId,
     );
-    if (!courseEnrollment) {
+    if (!courseEnrollmentDomain) {
       throw new RepositoryNotFoundError(
         'Запись об участии в курсе не найдена.',
         CourseEnrollmentRepo.name,
       );
     }
-    courseEnrollment.status = status;
+    courseEnrollmentDomain.status = status;
     try {
-      await this.repository.save(courseEnrollment);
-      return courseEnrollment;
+      await this.repository.save(CourseEnrollementMapper.toDatabaseEntity(courseEnrollmentDomain));
+      return courseEnrollmentDomain;
     } catch (err) {
       throw new RepositoryUnknownError(err.message, CourseEnrollmentRepo.name);
     }

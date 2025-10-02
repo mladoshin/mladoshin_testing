@@ -30,7 +30,9 @@ export class AccessLogInterceptor implements NestInterceptor {
     return next.handle().pipe(
       tap(() => {
         const logLine = `[${method}] ${url} by ${user} from ${ip}`;
-        this.logger.accessLog(logLine);
+        if (process.env.NODE_ENV !== 'test') {
+          this.logger.accessLog(logLine);
+        }
       }),
     );
   }

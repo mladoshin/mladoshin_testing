@@ -36,10 +36,7 @@ export class UsersService implements IUsersService {
     try {
       return this.userRepository.findOrFailById(id);
     } catch (err) {
-      if (err instanceof RepositoryNotFoundError) {
-        throw new NotFoundException(err.message);
-      }
-      throw new InternalServerErrorException(err?.message);
+      throw err;
     }
   }
 
@@ -47,10 +44,7 @@ export class UsersService implements IUsersService {
     try {
       return this.userRepository.update(id, updateUserDto);
     } catch (err) {
-      if (err instanceof RepositoryNotFoundError) {
-        throw new NotFoundException(err.message);
-      }
-      throw new InternalServerErrorException(err?.message);
+      throw err;
     }
   }
 
@@ -58,10 +52,7 @@ export class UsersService implements IUsersService {
     try {
       return this.userRepository.delete(id);
     } catch (err) {
-      if (err instanceof RepositoryNotFoundError) {
-        throw new NotFoundException(err.message);
-      }
-      throw new InternalServerErrorException(err?.message);
+      throw err;
     }
   }
 }

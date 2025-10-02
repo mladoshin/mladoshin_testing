@@ -88,9 +88,6 @@ export class AuthService implements IAuthService {
     try {
       return this.userRepository.findOrFailById(userId);
     } catch (err) {
-      if (err instanceof RepositoryNotFoundError) {
-        throw new NotFoundException('Пользователь не найден.');
-      }
       throw err;
     }
   }

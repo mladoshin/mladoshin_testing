@@ -158,7 +158,7 @@ describe('CoursesController', () => {
 
       const result = await controller.findOne('1');
 
-      expect(service.findOne).toHaveBeenCalledWith('1');
+      expect(service.findOne).toHaveBeenCalledWith('1', undefined);
       expect(result).toEqual(response);
     });
   });

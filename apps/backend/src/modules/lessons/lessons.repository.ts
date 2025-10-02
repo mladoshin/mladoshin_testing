@@ -43,14 +43,14 @@ export class CourseLessonRepo implements ICourseLessonRepo {
   }
 
   async update(id: string, updateLessonDto: UpdateLessonDto) {
-    let lessonDBEntity = await this.findOrFailById(id);
-    const updated = this.repository.merge(lessonDBEntity, updateLessonDto);
+    let lessonEntity = await this.findOrFailById(id);
+    const updated = this.repository.merge(lessonEntity as CourseLesson, updateLessonDto);
     try {
-      lessonDBEntity = await this.repository.save(updated);
+      lessonEntity = await this.repository.save(updated);
     } catch (err) {
       throw new RepositoryUnknownError(err.message, CourseLessonRepo.name);
     }
-    return CourseLessonMapper.toDomainEntity(lessonDBEntity);
+    return CourseLessonMapper.toDomainEntity(lessonEntity as CourseLesson);
   }
 
   async findById(id: string) {
@@ -62,7 +62,7 @@ export class CourseLessonRepo implements ICourseLessonRepo {
       : null;
   }
 
-  async findOrFailById(id: string): Promise<CourseLesson> {
+  async findOrFailById(id: string): Promise<CourseLessonDomain> {
     const lessonDomainEntity = await this.findById(id);
     if (!lessonDomainEntity) {
       throw new RepositoryNotFoundError('Урок не найден.', CourseLesson.name);
@@ -90,7 +90,7 @@ export class CourseLessonRepo implements ICourseLessonRepo {
   async delete(id: string) {
     const lessonDomainEntity = await this.findOrFailById(id);
     try {
-      await this.repository.remove(lessonDomainEntity);
+      await this.repository.remove(lessonDomainEntity as CourseLesson);
     } catch (err) {
       throw new RepositoryUnknownError(err.message, CourseLessonRepo.name);
     }

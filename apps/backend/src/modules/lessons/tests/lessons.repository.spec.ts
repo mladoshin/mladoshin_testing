@@ -62,6 +62,7 @@ describe('CourseLessonRepo', () => {
       content: 'Lesson content',
       course_id: course.id,
       date: '2025-01-01',
+      duration: 60
     };
 
     const lesson = await repo.create(dto);
@@ -78,6 +79,7 @@ describe('CourseLessonRepo', () => {
       content: 'More content',
       course_id: course.id,
       date: '2025-01-01',
+      duration: 60
     };
 
     const created = await repo.create(dto);
@@ -91,6 +93,7 @@ describe('CourseLessonRepo', () => {
       content: 'Old content',
       course_id: course.id,
       date: '2025-01-01',
+      duration: 60
     });
 
     const updated = await repo.update(lesson.id, {
@@ -107,6 +110,7 @@ describe('CourseLessonRepo', () => {
       content: 'Will be gone',
       course_id: course.id,
       date: '2025-01-01',
+      duration: 60
     });
 
     await repo.delete(lesson.id);

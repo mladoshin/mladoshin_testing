@@ -38,14 +38,14 @@ export class CourseRepo implements ICourseRepo {
   }
 
   async update(id: string, updateCourseDto: UpdateCourseDto) {
-    let courseDBEntity = await this.findOrFailById(id);
-    const updated = this.repository.merge(courseDBEntity, updateCourseDto);
+    let course = await this.findOrFailById(id);
+    const updated = this.repository.merge(course as Course, updateCourseDto);
     try {
-      courseDBEntity = await this.repository.save(updated);
+      course = await this.repository.save(updated);
     } catch (err) {
       throw new RepositoryUnknownError(err.message, CourseRepo.name);
     }
-    return CourseMapper.toDomainEntity(courseDBEntity);
+    return CourseMapper.toDomainEntity(course as Course);
   }
 
   async findById(id: string) {
@@ -58,7 +58,7 @@ export class CourseRepo implements ICourseRepo {
     return courseDBEntity ? CourseMapper.toDomainEntity(courseDBEntity) : null;
   }
 
-  async findOrFailById(id: string): Promise<Course> {
+  async findOrFailById(id: string): Promise<CourseDomain> {
     const courseDomain = await this.findById(id);
     if (!courseDomain) {
       throw new RepositoryNotFoundError('Курс не найден.', Course.name);
@@ -75,7 +75,7 @@ export class CourseRepo implements ICourseRepo {
     const courseDomain = await this.findOrFailById(id);
     const tmp = { ...courseDomain };
     try {
-      await this.repository.remove(courseDomain);
+      await this.repository.remove(courseDomain as Course);
     } catch (err) {
       throw new RepositoryUnknownError(err.message, CourseRepo.name);
     }

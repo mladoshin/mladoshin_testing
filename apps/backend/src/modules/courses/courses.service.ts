@@ -220,7 +220,7 @@ export class CoursesService implements ICoursesService {
     }
   }
 
-  async update(id: string, updateCourseDto: UpdateCourseDto): Promise<Course> {
+  async update(id: string, updateCourseDto: UpdateCourseDto): Promise<CourseDomain> {
     try {
       return await this.courseRepository.update(id, updateCourseDto);
     } catch (err) {
@@ -231,7 +231,7 @@ export class CoursesService implements ICoursesService {
     }
   }
 
-  async remove(id: string): Promise<Course> {
+  async remove(id: string): Promise<CourseDomain> {
     try {
       return await this.courseRepository.delete(id);
     } catch (err) {

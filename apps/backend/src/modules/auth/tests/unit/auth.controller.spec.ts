@@ -1,20 +1,18 @@
-import { Test, TestingModule } from '@nestjs/testing';
-import { AuthController } from '../auth.controller';
-import { AuthService, IAuthService } from '../auth.service';
-import { TokenPair, TokenService } from 'src/common/services/TokenService';
 import {
   ConflictException,
   NotFoundException,
   UnauthorizedException,
 } from '@nestjs/common';
 import { ConfigModule } from '@nestjs/config';
-import { LoginUserDto } from '../dto/login.dto';
-import { RegisterUserDto } from '../dto/register.dto';
-import { UserResponse } from '../../users/dto/user-response.dto';
-import { User } from '../../users/entities/user.entity';
-import {
-  IAppLoggerService,
-} from 'src/common/logging/log.service';
+import { Test, TestingModule } from '@nestjs/testing';
+import { IAppLoggerService } from 'src/common/logging/log.service';
+import { TokenService } from 'src/common/services/TokenService';
+import { UserBuilder } from 'src/common/tests/builders/user.builder';
+import { AuthObjectMother } from 'src/common/tests/object-mothers/auth-object-mother';
+import { UserResponse } from '../../../users/dto/user-response.dto';
+import { AuthController } from '../../auth.controller';
+import { IAuthService } from '../../auth.service';
+import { RegisterUserDto } from '../../dto/register.dto';
 
 describe('AuthController', () => {
   let controller: AuthController;
@@ -57,32 +55,26 @@ describe('AuthController', () => {
   });
 
   it('login_success', async () => {
-    // Arrange
-    const dto = { email: 'a@b.com', password: 'pw' };
-    mockAuthService.login?.mockResolvedValue({
-      accessToken: 'AT',
-      refreshToken: 'RT',
-    });
+    const dto = AuthObjectMother.buildLoginDto();
+    const tokenPair = AuthObjectMother.buildTokenPair();
+    mockAuthService.login?.mockResolvedValue(tokenPair);
 
-    // Create a fake `res` with a jest.fn() for `cookie`
     const res: any = {
       cookie: jest.fn(),
     };
 
-    // Act
     const result = await controller.login(dto, res);
 
-    // Assert
     expect(res.cookie).toHaveBeenCalledWith(
       'refresh_token',
-      'RT',
+      tokenPair.refreshToken,
       expect.objectContaining({
         httpOnly: true,
         sameSite: 'strict',
         secure: true,
       }),
-    ); // ← проверяем вызов cookie :contentReference[oaicite:0]{index=0}
-    expect(result).toEqual({ access_token: 'AT' });
+    );
+    expect(result).toEqual({ access_token: tokenPair.accessToken });
   });
 
   it('login_failure', async () => {
@@ -90,10 +82,7 @@ describe('AuthController', () => {
       throw new UnauthorizedException();
     });
 
-    const dto: LoginUserDto = {
-      email: 'wrong@example.com',
-      password: 'badpass',
-    };
+    const dto = AuthObjectMother.buildLoginDto();
     const fakeRes: any = { cookie: jest.fn() };
 
     await expect(controller.login(dto, fakeRes)).rejects.toBeInstanceOf(
@@ -105,47 +94,31 @@ describe('AuthController', () => {
 
   it('register_success', async () => {
     // Arrange
-    const dto: RegisterUserDto = {
-      email: 'a@b.com',
-      password: 'pw',
-      first_name: 'fn',
-      last_name: 'ln',
-    };
+    const dto: RegisterUserDto = AuthObjectMother.buildRegisterDto();
+    const tokenPair = AuthObjectMother.buildTokenPair();
+    mockAuthService.register?.mockResolvedValue(tokenPair);
 
-    mockAuthService.register?.mockResolvedValue({
-      accessToken: 'AT',
-      refreshToken: 'RT',
-    });
-
-    // Create a fake `res` with a jest.fn() for `cookie`
     const res: any = {
       cookie: jest.fn(),
     };
 
-    // Act
     const result = await controller.register(dto, res);
 
-    // Assert
     expect(res.cookie).toHaveBeenCalledWith(
       'refresh_token',
-      'RT',
+      tokenPair.refreshToken,
       expect.objectContaining({
         httpOnly: true,
         sameSite: 'strict',
         secure: true,
       }),
-    ); // ← проверяем вызов cookie :contentReference[oaicite:0]{index=0}
-    expect(result).toEqual({ access_token: 'AT' });
+    );
+    expect(result).toEqual({ access_token: tokenPair.accessToken });
   });
 
   it('register_failure', async () => {
     // Arrange
-    const dto: RegisterUserDto = {
-      email: 'a@b.com',
-      password: 'pw',
-      first_name: 'fn',
-      last_name: 'ln',
-    };
+    const dto: RegisterUserDto = AuthObjectMother.buildRegisterDto();
 
     mockAuthService.register?.mockImplementation(() => {
       throw new ConflictException();
@@ -163,21 +136,11 @@ describe('AuthController', () => {
   });
 
   it('get_me_success', async () => {
-    // Arrange: fake user data
-    const fakeUser = {
-      id: 'user-123',
-      email: 'a@b.com',
-      role: 'user',
-      profile: {
-        first_name: 'Maxim',
-        last_name: 'Ladoshin',
-      },
-    } as User;
+    const fakeUser = new UserBuilder().build();
     mockAuthService.getMe!.mockResolvedValue(fakeUser);
-    // Act
-    const result = await controller.getMe('user-123');
-    // Note: the @User decorator pulls id from req.user, so the arg is ignored
-    // Assert
+
+    const result = await controller.getMe(fakeUser.id);
+
     expect(result).toBeInstanceOf(UserResponse);
     expect(result).toEqual(UserResponse.make(fakeUser));
   });

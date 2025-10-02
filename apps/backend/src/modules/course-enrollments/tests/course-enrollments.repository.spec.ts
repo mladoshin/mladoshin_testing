@@ -14,6 +14,8 @@ import { DataSource } from 'typeorm';
 import { CourseEnrollmentStatus } from '../types/course-enrollments.types';
 import { CourseEnrollment } from '../entities/course-enrollment.entity';
 import { CourseEnrollmentDomain } from '../domains/course-enrollment.domain';
+import { UserBuilder } from 'src/modules/users/tests/builders/user.builder';
+import { CourseDomainBuilder } from 'src/modules/courses/tests/builders/course-domain.builder';
 
 describe('CourseEnrollmentRepo (integration)', () => {
   let module: TestingModule;
@@ -42,7 +44,7 @@ describe('CourseEnrollmentRepo (integration)', () => {
           Payment,
           Course,
           CourseLesson,
-          CourseEnrollment
+          CourseEnrollment,
         ]),
       ],
       providers: [CourseEnrollmentRepo],
@@ -52,29 +54,16 @@ describe('CourseEnrollmentRepo (integration)', () => {
       module.get<CourseEnrollmentRepo>(CourseEnrollmentRepo);
     dataSource = module.get<DataSource>(DataSource);
 
-    // Create a user and course for testing
+    // Репозитории
     const userRepo = dataSource.getRepository(User);
     const courseRepo = dataSource.getRepository(Course);
 
-    user = await userRepo.save(
-      userRepo.create({
-        email: 'test@user.com',
-        password: 'password',
-        role: UserRole.USER,
-        profile: {
-          first_name: 'Maxim',
-          last_name: 'Ladoshin',
-        },
-      }),
-    );
-    course = await courseRepo.save(
-      courseRepo.create({
-        name: 'Test Course',
-        date_start: '2025-01-01T18:37:00',
-        date_finish: '2025-01-01T18:37:00',
-        price: 100,
-      }),
-    );
+    // Создаём объекты через билдер
+    const userData = new UserBuilder().withEmail('test@user.com').build();
+    user = await userRepo.save(userRepo.create(userData as User));
+
+    const courseData = new CourseDomainBuilder().name('Test Course').build();
+    course = await courseRepo.save(courseRepo.create(courseData as Course));
   });
 
   afterAll(async () => {
@@ -126,7 +115,9 @@ describe('CourseEnrollmentRepo (integration)', () => {
       course.id,
       CourseEnrollmentStatus.PAID,
     );
-    expect((updated as CourseEnrollmentDomain).status).toBe(CourseEnrollmentStatus.PAID);
+    expect((updated as CourseEnrollmentDomain).status).toBe(
+      CourseEnrollmentStatus.PAID,
+    );
   });
 
   it('should find enrollment by id', async () => {

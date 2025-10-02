@@ -6,7 +6,7 @@ import { compilerOptions } from './tsconfig.json';
 const config: Config = {
   // 1) Используем ts-jest для трансформации TypeScript :contentReference[oaicite:0]{index=0}
   preset: 'ts-jest',
-  testEnvironment: 'node',
+  testEnvironment: 'allure-jest/node',
 
   // 2) Автоматически мапим alias"ы из tsconfig.paths → moduleNameMapper :contentReference[oaicite:1]{index=1}
   moduleNameMapper: {

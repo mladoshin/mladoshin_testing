@@ -34,7 +34,7 @@ export class LessonsService implements ILessonsService{
     return this.courseLessonRepository.findAll();
   }
 
-  findOne(id: string): Promise<CourseLesson> {
+  findOne(id: string): Promise<CourseLessonDomain> {
     try {
       return this.courseLessonRepository.findOrFailById(id);
     } catch (err) {
