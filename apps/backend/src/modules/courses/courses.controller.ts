@@ -20,6 +20,7 @@ import { PaymentResponse } from '../payments/dto/payment-response.dto';
 import { CourseLessonResponse } from '../lessons/dto/lesson-response.dto';
 import { AccessLog } from 'src/common/logging/access-log.decorator';
 import { OptionalJwtAuthGuard } from '../auth/guards/OptionalAuthGuard';
+import { RepositoryNotFoundError } from 'src/common/errors/db-errors';
 
 @Controller('courses')
 export class CoursesController {

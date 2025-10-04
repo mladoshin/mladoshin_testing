@@ -12,6 +12,7 @@ import { ICourseRepo } from './courses.repository';
 import { Course } from './entities/course.entity';
 import {
   RepositoryDuplicateError,
+  RepositoryForbiddenError,
   RepositoryNotFoundError,
 } from 'src/common/errors/db-errors';
 import { ICourseEnrollmentRepo } from '../course-enrollments/course-enrollments.repository';
@@ -65,7 +66,7 @@ export class CoursesService implements ICoursesService {
   async findAllLessons(user: JWTPayload, courseId: string) {
     const hasAccess = await this.doesUserHaveAccess(user, courseId);
     if (!hasAccess) {
-      throw new ForbiddenException('У вас нет доступа к этому курсу.');
+      throw new RepositoryForbiddenError('У вас нет доступа к этому курсу.', CoursesService.name);
     }
 
     return this.lessonRepository.findAllByCourse(courseId);
@@ -115,7 +116,7 @@ export class CoursesService implements ICoursesService {
       }
 
       if (courseEnrollment.status === CourseEnrollmentStatus.PAID) {
-        throw new ForbiddenException(
+        throw new RepositoryDuplicateError(
           'Пользователь уже оплатил этот курс.',
           CoursesService.name,
         );
@@ -133,12 +134,7 @@ export class CoursesService implements ICoursesService {
       );
       return payment;
     } catch (err) {
-      if (err instanceof RepositoryNotFoundError) {
-        throw new NotFoundException(err.message);
-      } else if (err instanceof ForbiddenException) {
-        throw err;
-      }
-      throw new InternalServerErrorException(err?.message);
+      throw err
     }
   }
 
@@ -157,10 +153,7 @@ export class CoursesService implements ICoursesService {
     try {
       return await this.courseEnrollmentRepository.findManyByCourse(courseId);
     } catch (err) {
-      if (err instanceof RepositoryNotFoundError) {
-        throw new NotFoundException(err.message);
-      }
-      throw new InternalServerErrorException(err?.message);
+      throw err;
     }
   }
 
@@ -174,12 +167,7 @@ export class CoursesService implements ICoursesService {
         courseId,
       );
     } catch (err) {
-      if (err instanceof RepositoryNotFoundError) {
-        throw new NotFoundException(err.message);
-      } else if (err instanceof RepositoryDuplicateError) {
-        throw new ConflictException(err.message);
-      }
-      throw new InternalServerErrorException(err?.message);
+      throw err
     }
   }
 
@@ -213,10 +201,7 @@ export class CoursesService implements ICoursesService {
       }
       return course;
     } catch (err) {
-      if (err instanceof RepositoryNotFoundError) {
-        throw new NotFoundException(err.message);
-      }
-      throw new InternalServerErrorException(err?.message);
+      throw err
     }
   }
 
@@ -224,10 +209,7 @@ export class CoursesService implements ICoursesService {
     try {
       return await this.courseRepository.update(id, updateCourseDto);
     } catch (err) {
-      if (err instanceof RepositoryNotFoundError) {
-        throw new NotFoundException(err.message);
-      }
-      throw new InternalServerErrorException(err?.message);
+      throw err
     }
   }
 
@@ -235,10 +217,7 @@ export class CoursesService implements ICoursesService {
     try {
       return await this.courseRepository.delete(id);
     } catch (err) {
-      if (err instanceof RepositoryNotFoundError) {
-        throw new NotFoundException(err.message);
-      }
-      throw new InternalServerErrorException(err?.message);
+      throw err;
     }
   }
 }

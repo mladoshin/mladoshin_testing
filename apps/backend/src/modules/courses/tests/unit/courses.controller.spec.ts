@@ -1,11 +1,11 @@
 // courses.controller.spec.ts
 import { Test, TestingModule } from '@nestjs/testing';
-import { CoursesController } from '../courses.controller';
-import { CoursesService, ICoursesService } from '../courses.service';
-import { CreateCourseDto } from '../dto/create-course.dto';
-import { UpdateCourseDto } from '../dto/update-course.dto';
-import { CourseResponse } from '../dto/course-response.dto';
-import { Course } from '../entities/course.entity';
+import { CoursesController } from '../../courses.controller';
+import { ICoursesService } from '../../courses.service';
+import { CreateCourseDto } from '../../dto/create-course.dto';
+import { UpdateCourseDto } from '../../dto/update-course.dto';
+import { CourseResponse } from '../../dto/course-response.dto';
+import { Course } from '../../entities/course.entity';
 import { CourseEnrollmentResponse } from 'src/modules/course-enrollments/dto/course-enrollment-response.dto';
 import { JwtAuthGuard, JWTPayload } from 'src/modules/auth/guards/AuthGuard';
 import { UserRole } from 'src/modules/users/entities/user.entity';
@@ -13,6 +13,12 @@ import { CourseEnrollment } from 'src/modules/course-enrollments/entities/course
 import { CourseEnrollmentStatus } from 'src/modules/course-enrollments/types/course-enrollments.types';
 import { ConfigService } from '@nestjs/config';
 import { IAppLoggerService } from 'src/common/logging/log.service';
+import {
+  RepositoryDuplicateError,
+  RepositoryNotFoundError,
+  RepositoryUnknownError,
+} from 'src/common/errors/db-errors';
+import { CourseObjectMother } from 'src/common/tests/object-mothers/course-object-mother';
 
 describe('CoursesController', () => {
   let controller: CoursesController;
@@ -87,7 +93,7 @@ describe('CoursesController', () => {
   const responseList = [response];
 
   describe('register', () => {
-    it('should call service.registerUser and return response', async () => {
+    it('✅ should register user to course (positive)', async () => {
       const courseId = 'course-456';
       const mockEnrollment: CourseEnrollment = {
         id: 'enroll-1',
@@ -104,6 +110,15 @@ describe('CoursesController', () => {
       expect(service.registerUser).toHaveBeenCalledWith(mockUser.id, courseId);
       expect(result).toEqual(CourseEnrollmentResponse.make(mockEnrollment));
     });
+
+    it('❌ should throw if registerUser fails (negative)', async () => {
+      service.registerUser!.mockRejectedValue(
+        new RepositoryDuplicateError('', ''),
+      );
+      await expect(controller.register(mockUser, 'bad-id')).rejects.toThrow(
+        RepositoryDuplicateError,
+      );
+    });
   });
 
   describe('purchaseCourse', () => {
@@ -118,6 +133,14 @@ describe('CoursesController', () => {
         courseId,
       );
       expect(result).toEqual({ success: true });
+    });
+    it('❌ should throw if purchaseCourse fails (negative)', async () => {
+      service.purchaseCourse!.mockRejectedValue(
+        new RepositoryDuplicateError('', ''),
+      );
+      await expect(
+        controller.purchaseCourse(mockUser, 'bad-id'),
+      ).rejects.toThrow(RepositoryDuplicateError);
     });
   });
 
@@ -137,6 +160,14 @@ describe('CoursesController', () => {
       expect(service.create).toHaveBeenCalledWith(dto);
       expect(result).toEqual(response);
     });
+    it('❌ should throw if service.create fails (negative)', async () => {
+      const dto = CourseObjectMother.buildCreateDto();
+      service.create!.mockRejectedValue(new RepositoryUnknownError('', ''));
+
+      await expect(controller.create(dto)).rejects.toThrow(
+        RepositoryUnknownError,
+      );
+    });
   });
 
   // 3. findAll()
@@ -149,6 +180,12 @@ describe('CoursesController', () => {
       expect(service.findAll).toHaveBeenCalled();
       expect(result).toEqual(responseList);
     });
+    it('❌ should throw if service.findAll fails (negative)', async () => {
+      service.findAll!.mockRejectedValue(new RepositoryUnknownError('', ''));
+      await expect(controller.findAll()).rejects.toThrow(
+        RepositoryUnknownError,
+      );
+    });
   });
 
   // 4. findOne()
@@ -160,6 +197,13 @@ describe('CoursesController', () => {
 
       expect(service.findOne).toHaveBeenCalledWith('1', undefined);
       expect(result).toEqual(response);
+    });
+    it('❌ should throw if course not found (negative)', async () => {
+      service.findOne!.mockRejectedValue(new RepositoryNotFoundError('', ''));
+
+      await expect(controller.findOne('999')).rejects.toThrow(
+        RepositoryNotFoundError,
+      );
     });
   });
 
@@ -179,6 +223,14 @@ describe('CoursesController', () => {
       expect(service.update).toHaveBeenCalledWith('1', dto);
       expect(result).toEqual(CourseResponse.make({ ...sampleCourse, ...dto }));
     });
+    it('❌ should throw if update fails (negative)', async () => {
+      const dto = CourseObjectMother.buildUpdateDto({ name: 'Updated' });
+      service.update!.mockRejectedValue(new RepositoryNotFoundError('', ''));
+
+      await expect(controller.update('1', dto)).rejects.toThrow(
+        RepositoryNotFoundError,
+      );
+    });
   });
 
   // 6. remove()
@@ -190,6 +242,14 @@ describe('CoursesController', () => {
 
       expect(service.remove).toHaveBeenCalledWith('1');
       expect(result).toEqual(response);
+    });
+
+    it('❌ should throw if remove fails (negative)', async () => {
+      service.remove!.mockRejectedValue(new RepositoryNotFoundError('', ''));
+
+      await expect(controller.remove('1')).rejects.toThrow(
+        RepositoryNotFoundError,
+      );
     });
   });
 });

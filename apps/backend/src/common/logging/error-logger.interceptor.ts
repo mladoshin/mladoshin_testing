@@ -14,6 +14,7 @@ import {
 } from '@nestjs/common';
 import { Observable, catchError, throwError } from 'rxjs';
 import { IAppLoggerService } from './log.service';
+import { ErrorMapper } from '../errors/error-mapper';
 
 @Injectable()
 @Global()
@@ -36,16 +37,16 @@ export class ErrorLoggerInterceptor implements NestInterceptor {
         const message = err.message || 'Internal server error';
         const trace = err.stack;
 
-        this.logger.error(
-          `${method} ${url} failed [${status}] - ${message}`,
-          trace,
-          'ErrorLogger',
-        );
+        if (process.env.NODE_ENV !== 'test') {
+          this.logger.error(
+            `${method} ${url} failed [${status}] - ${message}`,
+            trace,
+            'ErrorLogger',
+          );
+        }
 
         return throwError(() =>
-          err instanceof HttpException
-            ? err
-            : new InternalServerErrorException(),
+          err instanceof HttpException ? err : ErrorMapper.mapToHTTPError(err),
         );
       }),
     );
