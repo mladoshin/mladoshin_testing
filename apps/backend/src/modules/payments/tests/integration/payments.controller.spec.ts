@@ -3,30 +3,29 @@ import { TypeOrmModule, TypeOrmModuleOptions } from '@nestjs/typeorm';
 import { DataSource, Repository } from 'typeorm';
 import { INestApplication, ValidationPipe } from '@nestjs/common';
 import request from 'supertest';
-import { CoursesController } from '../../courses.controller';
-import { Course } from '../../entities/course.entity';
+import { PaymentsController } from '../../payments.controller';
+import { Payment } from '../../entities/payment.entity';
+import { Course } from 'src/modules/courses/entities/course.entity';
 import { CourseLesson } from 'src/modules/lessons/entities/course-lesson.entity';
-import { Payment } from 'src/modules/payments/entities/payment.entity';
 import { User } from 'src/modules/users/entities/user.entity';
 import { UserProfile } from 'src/modules/users/entities/user-profile.entity';
 import { ConfigModule, ConfigService } from '@nestjs/config';
 import {
-  createTestingDataSourceOptions,
   createTestingSchema,
   getTestingDatabaseConfig,
 } from 'src/common/utils/utils';
-import { CoursesService, ICoursesService } from '../../courses.service';
-import { CoursesModule } from '../../courses.module';
+import { PaymentsModule } from '../../payments.module';
 import { AppLoggerModule } from 'src/common/logging/log.module';
-import { CourseObjectMother } from 'src/common/tests/object-mothers/course-object-mother';
+import { PaymentObjectMother } from 'src/common/tests/object-mothers/payment-object-mother';
 import { IAuthService } from 'src/modules/auth/auth.service';
 import { AuthModule } from 'src/modules/auth/auth.module';
 import { UserBuilder } from 'src/common/tests/builders/user.builder';
 import { CourseBuilder } from 'src/common/tests/builders/course.builder';
+import { PaymentBuilder } from 'src/common/tests/builders/payment.builder';
 import { v4 as uuidv4 } from 'uuid';
 import { ErrorLoggerInterceptor } from 'src/common/logging/error-logger.interceptor';
 
-describe('CoursesController (integration)', () => {
+describe('PaymentsController (integration)', () => {
   let module: TestingModule;
   let app: INestApplication;
   let dataSource: DataSource;
@@ -34,16 +33,17 @@ describe('CoursesController (integration)', () => {
 
   let userRepo: Repository<User>;
   let courseRepo: Repository<Course>;
+  let paymentRepo: Repository<Payment>;
 
   let user: User;
   let course: Course;
+  let payment: Payment;
   let token: string;
   let schemaName: string;
 
   beforeAll(async () => {
     schemaName = `test_schema_${uuidv4().replace(/-/g, '')}`;
 
-    // Основной модуль с указанием схемы
     module = await Test.createTestingModule({
       imports: [
         ConfigModule.forRoot({
@@ -69,7 +69,7 @@ describe('CoursesController (integration)', () => {
           CourseLesson,
         ]),
         AuthModule,
-        CoursesModule,
+        PaymentsModule,
         AppLoggerModule,
       ],
       providers: [ErrorLoggerInterceptor],
@@ -89,6 +89,7 @@ describe('CoursesController (integration)', () => {
     // Репозитории
     userRepo = dataSource.getRepository(User);
     courseRepo = dataSource.getRepository(Course);
+    paymentRepo = dataSource.getRepository(Payment);
   });
 
   afterAll(async () => {
@@ -98,14 +99,22 @@ describe('CoursesController (integration)', () => {
   });
 
   beforeEach(async () => {
-    // Создаём объекты через билдер
+    // Создаём пользователя через билдер
     const userData = new UserBuilder().withEmail('test@user.com').build();
     user = await userRepo.save(userData);
     const { accessToken } = authService.createTokenPair(user);
     token = `Bearer ${accessToken}`;
 
+    // Создаём курс через билдер
     const courseData = new CourseBuilder().withName('Test Course').build();
     course = await courseRepo.save(courseRepo.create(courseData as Course));
+
+    // Создаём платеж через билдер
+    const paymentData = new PaymentBuilder()
+      .withUserId(user.id)
+      .withCourseId(course.id)
+      .build();
+    payment = await paymentRepo.save(paymentRepo.create(paymentData as Payment));
   });
 
   afterEach(async () => {
@@ -115,93 +124,116 @@ describe('CoursesController (integration)', () => {
   });
 
   // ---------- CREATE ----------
-  it('POST /courses → should create a course', async () => {
-    const dto = CourseObjectMother.buildCreateDto();
+  it('POST /payments → должен создать платеж', async () => {
+    const dto = PaymentObjectMother.buildCreateDto({
+      userId: user.id,
+      courseId: course.id,
+    });
 
     const res = await request(app.getHttpServer())
-      .post('/courses')
+      .post('/payments')
       .set('Authorization', token)
       .send(dto)
       .expect(201);
 
-    expect(res.body).toMatchObject(dto);
+    expect(res.body.amount).toBe(dto.amount);
+    expect(res.body.user_id).toBe(user.id);
+    expect(res.body.course_id).toBe(course.id);
     expect(res.body.id).toBeDefined();
   });
 
-  it('POST /courses → should fail to create course with empty name', async () => {
-    const dto = CourseObjectMother.buildCreateDto({ name: '' });
+  it('POST /payments → должен вернуть ошибку при создании платежа с отрицательной суммой', async () => {
+    const dto = PaymentObjectMother.buildCreateDto({
+      userId: user.id,
+      courseId: course.id,
+      amount: -100,
+    });
 
     await request(app.getHttpServer())
-      .post('/courses')
+      .post('/payments')
       .set('Authorization', token)
       .send(dto)
       .expect(400);
   });
 
   // ---------- FIND ALL ----------
-  it('GET /courses → should return all courses', async () => {
-    const res = await request(app.getHttpServer()).get('/courses').expect(200);
+  it('GET /payments → должен вернуть все платежи', async () => {
+    const res = await request(app.getHttpServer())
+      .get('/payments')
+      .set('Authorization', token)
+      .expect(200);
+
     expect(Array.isArray(res.body)).toBe(true);
     expect(res.body.length).toBe(1);
   });
 
-  it('GET /courses → should return empty array if no courses exist', async () => {
+  it('GET /payments → должен вернуть пустой массив если платежей нет', async () => {
     await dataSource.query(
-      `TRUNCATE TABLE "${schemaName}"."course" RESTART IDENTITY CASCADE`,
+      `TRUNCATE TABLE "${schemaName}"."payment" RESTART IDENTITY CASCADE`,
     );
-    const res = await request(app.getHttpServer()).get('/courses').expect(200);
+
+    const res = await request(app.getHttpServer())
+      .get('/payments')
+      .set('Authorization', token)
+      .expect(200);
+
     expect(res.body).toEqual([]);
   });
 
-  //   // ---------- FIND BY ID ----------
-  it('GET /courses/:id → should return one course', async () => {
+  // ---------- FIND BY ID ----------
+  it('GET /payments/:id → должен вернуть платеж по id', async () => {
     const res = await request(app.getHttpServer())
-      .get(`/courses/${course.id}`)
+      .get(`/payments/${payment.id}`)
+      .set('Authorization', token)
       .expect(200);
 
-    expect(res.body.id).toBe(course.id);
-    expect(res.body.name).toBe(course.name);
+    expect(res.body.id).toBe(payment.id);
+    expect(res.body.amount).toBe(payment.amount);
   });
 
-  it('GET /courses/:id → should return 404 for non-existing course', async () => {
-    await request(app.getHttpServer()).get(`/courses/${uuidv4()}`).expect(404);
+  it('GET /payments/:id → должен вернуть 404 для несуществующего платежа', async () => {
+    await request(app.getHttpServer())
+      .get(`/payments/${uuidv4()}`)
+      .set('Authorization', token)
+      .expect(404);
   });
 
   // ---------- UPDATE ----------
-  it('PATCH /courses/:id → should update course', async () => {
-    const dto = CourseObjectMother.buildUpdateDto({ name: 'New name' });
+  it('PATCH /payments/:id → должен обновить платеж', async () => {
+    const dto = PaymentObjectMother.buildUpdateDto({ amount: 200 });
 
     const res = await request(app.getHttpServer())
-      .patch(`/courses/${course.id}`)
+      .patch(`/payments/${payment.id}`)
       .set('Authorization', token)
       .send(dto)
       .expect(200);
 
-    expect(res.body.name).toBe(dto.name);
+    expect(res.body.amount).toBe(dto.amount);
   });
 
-  it('PATCH /courses/:id → should return 404 when updating non-existing course', async () => {
-    const dto = CourseObjectMother.buildUpdateDto({ name: 'New name' });
+  it('PATCH /payments/:id → должен вернуть 404 при обновлении несуществующего платежа', async () => {
+    const dto = PaymentObjectMother.buildUpdateDto({ amount: 200 });
 
     await request(app.getHttpServer())
-      .patch(`/courses/${uuidv4()}`)
+      .patch(`/payments/${uuidv4()}`)
       .set('Authorization', token)
       .send(dto)
       .expect(404);
   });
 
   // ---------- DELETE ----------
-  it('DELETE /courses/:id → should delete course', async () => {
+  it('DELETE /payments/:id → должен удалить платеж', async () => {
     const res = await request(app.getHttpServer())
-      .delete(`/courses/${course.id}`)
+      .delete(`/payments/${payment.id}`)
       .set('Authorization', token)
       .expect(200);
-    expect(res.body.id).toBe(course.id);
+
+    expect(res.body.id).toBe(payment.id);
   });
 
-  it('DELETE /courses/:id → should return 404 for non-existing course', async () => {
+  it('DELETE /payments/:id → должен вернуть 404 для несуществующего платежа', async () => {
     await request(app.getHttpServer())
-      .delete(`/courses/${uuidv4()}`)
+      .delete(`/payments/${uuidv4()}`)
       .set('Authorization', token)
       .expect(404);
   });

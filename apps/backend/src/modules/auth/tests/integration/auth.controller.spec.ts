@@ -1,4 +1,5 @@
 import { INestApplication, ValidationPipe } from '@nestjs/common';
+import { TypeOrmModuleOptions } from '@nestjs/typeorm';
 import { ConfigModule, ConfigService } from '@nestjs/config';
 import { Test, TestingModule } from '@nestjs/testing';
 import { TypeOrmModule } from '@nestjs/typeorm';
@@ -8,10 +9,12 @@ import { getTestingDatabaseConfig } from 'src/common/utils/utils';
 import request from 'supertest';
 import { DataSource } from 'typeorm';
 import { AuthModule } from '../../auth.module';
+import { v4 as uuidv4 } from 'uuid';
 
 describe('AuthController (Integration)', () => {
   let app: INestApplication;
   let dataSource: DataSource;
+  let schemaName: string;
 
   const mockLoggerService = {
     accessLog: jest.fn(),
@@ -22,6 +25,32 @@ describe('AuthController (Integration)', () => {
   };
 
   beforeAll(async () => {
+    schemaName = `test_schema_${uuidv4().replace(/-/g, '')}`;
+
+    // Создаём схему в базе
+    const tmpModule: TestingModule = await Test.createTestingModule({
+      imports: [
+        ConfigModule.forRoot({
+          isGlobal: true,
+          envFilePath: '.env.test',
+        }),
+        TypeOrmModule.forRootAsync({
+          imports: [ConfigModule],
+          inject: [ConfigService],
+          useFactory: (configService: ConfigService): TypeOrmModuleOptions => {
+            const config = getTestingDatabaseConfig(configService);
+            return { ...config };
+          },
+        }),
+      ],
+    }).compile();
+    const tmpApp = tmpModule.createNestApplication();
+    await tmpApp.init();
+    const tmpDataSource = tmpApp.get(DataSource);
+    await tmpDataSource.query(`CREATE SCHEMA IF NOT EXISTS "${schemaName}";`);
+    await tmpApp.close();
+
+    // Основной модуль с указанием схемы
     const module: TestingModule = await Test.createTestingModule({
       imports: [
         ConfigModule.forRoot({
@@ -31,10 +60,12 @@ describe('AuthController (Integration)', () => {
         TypeOrmModule.forRootAsync({
           imports: [ConfigModule],
           inject: [ConfigService],
-          useFactory: (configService: ConfigService) =>
-            getTestingDatabaseConfig(configService) as any,
+          useFactory: (configService: ConfigService): TypeOrmModuleOptions => {
+            const config = getTestingDatabaseConfig(configService);
+            return { ...config, schema: schemaName };
+          },
         }),
-        AuthModule, // подключаем реальный модуль
+        AuthModule,
         AppLoggerModule,
       ],
       providers: [
@@ -43,25 +74,25 @@ describe('AuthController (Integration)', () => {
     }).compile();
 
     app = module.createNestApplication();
-    
     app.useGlobalPipes(new ValidationPipe({ whitelist: true }));
     await app.init();
-
     dataSource = app.get(DataSource);
   });
 
   afterAll(async () => {
+    // Удаляем схему после тестов
+    await dataSource.query(`DROP SCHEMA IF EXISTS "${schemaName}" CASCADE;`);
     await app.close();
   });
 
   afterEach(async () => {
     await dataSource.query(`
     TRUNCATE TABLE
-      "course_lesson",
-      "course",
-      "payment",
-      "user_profile",
-      "user"
+      "${schemaName}"."course_lesson",
+      "${schemaName}"."course",
+      "${schemaName}"."payment",
+      "${schemaName}"."user_profile",
+      "${schemaName}"."user"
     RESTART IDENTITY CASCADE;
   `);
   });

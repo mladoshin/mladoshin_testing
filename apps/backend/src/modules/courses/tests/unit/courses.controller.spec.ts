@@ -2,14 +2,9 @@
 import { Test, TestingModule } from '@nestjs/testing';
 import { CoursesController } from '../../courses.controller';
 import { ICoursesService } from '../../courses.service';
-import { CreateCourseDto } from '../../dto/create-course.dto';
-import { UpdateCourseDto } from '../../dto/update-course.dto';
 import { CourseResponse } from '../../dto/course-response.dto';
-import { Course } from '../../entities/course.entity';
 import { CourseEnrollmentResponse } from 'src/modules/course-enrollments/dto/course-enrollment-response.dto';
-import { JwtAuthGuard, JWTPayload } from 'src/modules/auth/guards/AuthGuard';
-import { UserRole } from 'src/modules/users/entities/user.entity';
-import { CourseEnrollment } from 'src/modules/course-enrollments/entities/course-enrollment.entity';
+import { JwtAuthGuard } from 'src/modules/auth/guards/AuthGuard';
 import { CourseEnrollmentStatus } from 'src/modules/course-enrollments/types/course-enrollments.types';
 import { ConfigService } from '@nestjs/config';
 import { IAppLoggerService } from 'src/common/logging/log.service';
@@ -19,6 +14,9 @@ import {
   RepositoryUnknownError,
 } from 'src/common/errors/db-errors';
 import { CourseObjectMother } from 'src/common/tests/object-mothers/course-object-mother';
+import { CourseBuilder } from 'src/common/tests/builders/course.builder';
+import { JWTBuilder } from 'src/common/tests/builders/jwt.builder';
+import { CourseEnrollmentBuilder } from 'src/common/tests/builders/course-enrollment.builder';
 
 describe('CoursesController', () => {
   let controller: CoursesController;
@@ -72,36 +70,15 @@ describe('CoursesController', () => {
     jest.clearAllMocks();
   });
 
-  // Test data
-  const sampleCourse: Course = {
-    id: '1',
-    name: 'Test Course',
-    price: 100,
-    date_finish: '2025-01-01',
-    date_start: '2025-02-01',
-    lessons: [],
-    payments: [],
-  };
-
-  const mockUser: JWTPayload = {
-    id: 'user-123',
-    email: 'test@example.com',
-    role: UserRole.USER,
-  };
-
-  const response = CourseResponse.make(sampleCourse);
-  const responseList = [response];
-
   describe('register', () => {
     it('✅ should register user to course (positive)', async () => {
       const courseId = 'course-456';
-      const mockEnrollment: CourseEnrollment = {
-        id: 'enroll-1',
-        user_id: mockUser.id,
-        course_id: courseId,
-        status: CourseEnrollmentStatus.NEW,
-        created_at: new Date(),
-      };
+      const mockUser = new JWTBuilder().withId('user-123').build();
+      const mockEnrollment = new CourseEnrollmentBuilder()
+        .withUserId(mockUser.id)
+        .withCourseId(courseId)
+        .withStatus(CourseEnrollmentStatus.NEW)
+        .build();
 
       service.registerUser?.mockResolvedValue(mockEnrollment);
 
@@ -112,6 +89,7 @@ describe('CoursesController', () => {
     });
 
     it('❌ should throw if registerUser fails (negative)', async () => {
+      const mockUser = new JWTBuilder().build();
       service.registerUser!.mockRejectedValue(
         new RepositoryDuplicateError('', ''),
       );
@@ -124,6 +102,7 @@ describe('CoursesController', () => {
   describe('purchaseCourse', () => {
     it('should call service.purchaseCourse and return success', async () => {
       const courseId = 'course-789';
+      const mockUser = new JWTBuilder().build();
       service.purchaseCourse?.mockResolvedValue({});
 
       const result = await controller.purchaseCourse(mockUser, courseId);
@@ -135,6 +114,7 @@ describe('CoursesController', () => {
       expect(result).toEqual({ success: true });
     });
     it('❌ should throw if purchaseCourse fails (negative)', async () => {
+      const mockUser = new JWTBuilder().build();
       service.purchaseCourse!.mockRejectedValue(
         new RepositoryDuplicateError('', ''),
       );
@@ -147,18 +127,20 @@ describe('CoursesController', () => {
   // 2. create()
   describe('create', () => {
     it('should create a course and return CourseResponse', async () => {
-      const dto: CreateCourseDto = {
-        name: 'Test Course',
-        date_finish: '2025-01-01',
-        date_start: '2025-02-01',
-        price: 100,
-      };
+      const dto = CourseObjectMother.buildCreateDto();
+      const sampleCourse = new CourseBuilder()
+        .withName(dto.name)
+        .withPrice(dto.price)
+        .withDateStart(dto.date_start)
+        .withDateFinish(dto.date_finish)
+        .build();
+
       service.create!.mockResolvedValue(sampleCourse);
 
       const result = await controller.create(dto);
 
       expect(service.create).toHaveBeenCalledWith(dto);
-      expect(result).toEqual(response);
+      expect(result).toEqual(CourseResponse.make(sampleCourse));
     });
     it('❌ should throw if service.create fails (negative)', async () => {
       const dto = CourseObjectMother.buildCreateDto();
@@ -173,12 +155,13 @@ describe('CoursesController', () => {
   // 3. findAll()
   describe('findAll', () => {
     it('should return an array of CourseResponse', async () => {
+      const sampleCourse = new CourseBuilder().withName('Test Course').build();
       service.findAll!.mockResolvedValue([sampleCourse]);
 
       const result = await controller.findAll();
 
       expect(service.findAll).toHaveBeenCalled();
-      expect(result).toEqual(responseList);
+      expect(result).toEqual([CourseResponse.make(sampleCourse)]);
     });
     it('❌ should throw if service.findAll fails (negative)', async () => {
       service.findAll!.mockRejectedValue(new RepositoryUnknownError('', ''));
@@ -191,12 +174,13 @@ describe('CoursesController', () => {
   // 4. findOne()
   describe('findOne', () => {
     it('should return a single CourseResponse', async () => {
+      const sampleCourse = new CourseBuilder().withId('1').withName('Test Course').build();
       service.findOne!.mockResolvedValue(sampleCourse);
 
       const result = await controller.findOne('1');
 
       expect(service.findOne).toHaveBeenCalledWith('1', undefined);
-      expect(result).toEqual(response);
+      expect(result).toEqual(CourseResponse.make(sampleCourse));
     });
     it('❌ should throw if course not found (negative)', async () => {
       service.findOne!.mockRejectedValue(new RepositoryNotFoundError('', ''));
@@ -210,18 +194,27 @@ describe('CoursesController', () => {
   // 5. update()
   describe('update', () => {
     it('should update a course and return CourseResponse', async () => {
-      const dto: UpdateCourseDto = {
+      const dto = CourseObjectMother.buildUpdateDto({ 
         name: 'Updated',
         date_start: '2024-01-01',
         date_finish: '2024-02-01',
         price: 200,
-      };
-      service.update!.mockResolvedValue({ ...sampleCourse, ...dto });
+      });
+      const originalCourse = new CourseBuilder().withId('1').build();
+      const updatedCourse = new CourseBuilder()
+        .withId('1')
+        .withName(dto.name!)
+        .withDateStart(dto.date_start!)
+        .withDateFinish(dto.date_finish!)
+        .withPrice(dto.price!)
+        .build();
+
+      service.update!.mockResolvedValue(updatedCourse);
 
       const result = await controller.update('1', dto);
 
       expect(service.update).toHaveBeenCalledWith('1', dto);
-      expect(result).toEqual(CourseResponse.make({ ...sampleCourse, ...dto }));
+      expect(result).toEqual(CourseResponse.make(updatedCourse));
     });
     it('❌ should throw if update fails (negative)', async () => {
       const dto = CourseObjectMother.buildUpdateDto({ name: 'Updated' });
@@ -236,12 +229,13 @@ describe('CoursesController', () => {
   // 6. remove()
   describe('remove', () => {
     it('should remove a course and return CourseResponse', async () => {
+      const sampleCourse = new CourseBuilder().withId('1').withName('Test Course').build();
       service.remove!.mockResolvedValue(sampleCourse);
 
       const result = await controller.remove('1');
 
       expect(service.remove).toHaveBeenCalledWith('1');
-      expect(result).toEqual(response);
+      expect(result).toEqual(CourseResponse.make(sampleCourse));
     });
 
     it('❌ should throw if remove fails (negative)', async () => {

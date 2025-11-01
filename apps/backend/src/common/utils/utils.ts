@@ -8,7 +8,11 @@ import { UserSchedule } from 'src/modules/user-schedule/entities/user-schedule.e
 import { UserProfile } from 'src/modules/users/entities/user-profile.entity';
 import { User } from 'src/modules/users/entities/user.entity';
 
-export function getTestingDatabaseConfig(configService: ConfigService) {
+import { TypeOrmModuleOptions } from '@nestjs/typeorm';
+import { DataSource, DataSourceOptions } from 'typeorm';
+export function getTestingDatabaseConfig(
+  configService: ConfigService,
+): TypeOrmModuleOptions {
   return {
     host: configService.getOrThrow('POSTGRES_HOST'),
     port: configService.getOrThrow('POSTGRES_PORT'),
@@ -24,14 +28,40 @@ export function getTestingDatabaseConfig(configService: ConfigService) {
       Payment,
       UserProfile,
       UserAvailability,
-      UserSchedule
+      UserSchedule,
     ],
     synchronize: true,
     dropSchema: true, // IMPORTANT: resets DB for each run
   };
 }
 
-export function getDurationInMinutes(startTime: string, endTime: string): number {
+export async function createTestingSchema(configService: ConfigService, schemaName: string): Promise<void> {
+  const tmpDataSource = new DataSource(
+    createTestingDataSourceOptions(configService),
+  );
+
+  await tmpDataSource.initialize();
+  await tmpDataSource.query(`CREATE SCHEMA IF NOT EXISTS "${schemaName}";`);
+  await tmpDataSource.destroy();
+}
+
+export function createTestingDataSourceOptions(
+  configService: ConfigService,
+): DataSourceOptions {
+  return {
+    type: 'postgres',
+    host: configService.getOrThrow('POSTGRES_HOST'),
+    port: configService.getOrThrow('POSTGRES_PORT'),
+    username: configService.getOrThrow('POSTGRES_USER'),
+    password: configService.getOrThrow('POSTGRES_PASSWORD'),
+    database: configService.getOrThrow('POSTGRES_DB'),
+  };
+}
+
+export function getDurationInMinutes(
+  startTime: string,
+  endTime: string,
+): number {
   const [sh, sm, ss] = startTime.split(':').map(Number);
   const [eh, em, es] = endTime.split(':').map(Number);
 

@@ -15,8 +15,7 @@ export class CourseLessonBuilder {
       date: new Date().toISOString(),
       duration: 60,
       course_id: courseId,
-      course: {} as Course,
-    };
+    } as CourseLesson;
   }
 
   withId(id: string): this {

@@ -51,15 +51,20 @@ export class PaymentRepo implements IPaymentRepo {
   }
 
   async update(id: string, updatePaymentDto: UpdatePaymentDto) {
-    let paymentDomainEntity = await this.findOrFailById(id);
-    let paymentDBEntity: Payment;
-    const updated = this.repository.merge(paymentDomainEntity as Payment, updatePaymentDto);
+    const paymentDomainEntity = await this.findOrFailById(id);
+    const paymentDBEntity = await this.repository.findOne({ where: { id } });
+    
+    if (!paymentDBEntity) {
+      throw new RepositoryNotFoundError('Платеж не найден.', Payment.name);
+    }
+
+    const updated = this.repository.merge(paymentDBEntity, updatePaymentDto);
     try {
-      paymentDBEntity = await this.repository.save(updated);
+      const savedPayment = await this.repository.save(updated);
+      return PaymentsMapper.toDomainEntity(savedPayment);
     } catch (err) {
       throw new RepositoryUnknownError(err.message, PaymentRepo.name);
     }
-    return PaymentsMapper.toDomainEntity(paymentDBEntity);
   }
 
   async findById(id: string) {

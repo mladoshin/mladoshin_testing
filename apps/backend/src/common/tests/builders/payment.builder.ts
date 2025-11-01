@@ -16,9 +16,7 @@ export class PaymentBuilder {
       amount: 100,
       user_id: userId,
       course_id: courseId,
-      user: {} as User,
-      course: {} as Course
-    };
+    } as Payment;
   }
 
   withId(id: string): this {

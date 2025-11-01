@@ -2,7 +2,7 @@ import { ConfigModule, ConfigService } from '@nestjs/config';
 import { Test, TestingModule } from '@nestjs/testing';
 import { DataSource } from 'typeorm';
 
-import { TypeOrmModule } from '@nestjs/typeorm';
+import { TypeOrmModule, TypeOrmModuleOptions } from '@nestjs/typeorm';
 import { AppLoggerModule } from 'src/common/logging/log.module';
 import { AuthObjectMother } from 'src/common/tests/object-mothers/auth-object-mother';
 import { getTestingDatabaseConfig } from 'src/common/utils/utils';
@@ -10,12 +10,40 @@ import { User } from '../../../users/entities/user.entity';
 import { UsersModule } from '../../../users/users.module';
 import { AuthModule } from '../../auth.module';
 import { IAuthService } from '../../auth.service';
+import { v4 as uuidv4 } from 'uuid';
 
 describe('AuthService (Integration)', () => {
   let service: IAuthService;
   let dataSource: DataSource;
+  let schemaName: string;
 
   beforeAll(async () => {
+      schemaName = `test_schema_${uuidv4().replace(/-/g, '')}`;
+
+      // Создаём схему в базе
+      const tmpModule: TestingModule = await Test.createTestingModule({
+        imports: [
+          ConfigModule.forRoot({
+            isGlobal: true,
+            envFilePath: '.env.test',
+          }),
+          TypeOrmModule.forRootAsync({
+            imports: [ConfigModule],
+            inject: [ConfigService],
+            useFactory: (configService: ConfigService): TypeOrmModuleOptions => {
+              const config = getTestingDatabaseConfig(configService);
+              return { ...config };
+            },
+          }),
+        ],
+      }).compile();
+      const tmpApp = tmpModule.createNestApplication();
+      await tmpApp.init();
+      const tmpDataSource = tmpApp.get(DataSource);
+      await tmpDataSource.query(`CREATE SCHEMA IF NOT EXISTS "${schemaName}";`);
+      await tmpApp.close();
+
+      // Основной модуль с указанием схемы
       const module: TestingModule = await Test.createTestingModule({
         imports: [
           ConfigModule.forRoot({
@@ -25,8 +53,10 @@ describe('AuthService (Integration)', () => {
           TypeOrmModule.forRootAsync({
             imports: [ConfigModule],
             inject: [ConfigService],
-            useFactory: (configService: ConfigService) =>
-              getTestingDatabaseConfig(configService) as any,
+            useFactory: (configService: ConfigService): TypeOrmModuleOptions => {
+              const config = getTestingDatabaseConfig(configService);
+              return { ...config, schema: schemaName };
+            },
           }),
           AuthModule, // подключаем реальный модуль
           UsersModule,
@@ -38,9 +68,15 @@ describe('AuthService (Integration)', () => {
       service = module.get<IAuthService>('IAuthService');
     });
 
+  afterAll(async () => {
+    // Удаляем схему после тестов
+    await dataSource.query(`DROP SCHEMA IF EXISTS "${schemaName}" CASCADE;`);
+    await dataSource.destroy();
+  });
+
   afterEach(async () => {
     await dataSource.query(
-      `TRUNCATE TABLE "user_profile", "user" RESTART IDENTITY CASCADE`,
+      `TRUNCATE TABLE "${schemaName}"."user_profile", "${schemaName}"."user" RESTART IDENTITY CASCADE`,
     );
   });
 

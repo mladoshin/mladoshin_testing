@@ -1,5 +1,5 @@
 import { Test, TestingModule } from '@nestjs/testing';
-import { TypeOrmModule } from '@nestjs/typeorm';
+import { TypeOrmModule, TypeOrmModuleOptions } from '@nestjs/typeorm';
 import { ConfigModule, ConfigService } from '@nestjs/config';
 import { getTestingDatabaseConfig } from 'src/common/utils/utils';
 import { CourseEnrollmentRepo } from '../../course-enrollments.repository';
@@ -23,8 +23,35 @@ describe('CourseEnrollmentRepo (integration)', () => {
   let dataSource: DataSource;
   let user: User;
   let course: Course;
+  let schemaName: string;
 
   beforeAll(async () => {
+    schemaName = `test_schema_${uuidv4().replace(/-/g, '')}`;
+
+    // Создаём схему в базе
+    const tmpModule: TestingModule = await Test.createTestingModule({
+      imports: [
+        ConfigModule.forRoot({
+          isGlobal: true,
+          envFilePath: '.env.test',
+        }),
+        TypeOrmModule.forRootAsync({
+          imports: [ConfigModule],
+          inject: [ConfigService],
+          useFactory: (configService: ConfigService): TypeOrmModuleOptions => {
+            const config = getTestingDatabaseConfig(configService);
+            return { ...config };
+          },
+        }),
+      ],
+    }).compile();
+    const tmpApp = tmpModule.createNestApplication();
+    await tmpApp.init();
+    const tmpDataSource = tmpApp.get(DataSource);
+    await tmpDataSource.query(`CREATE SCHEMA IF NOT EXISTS "${schemaName}";`);
+    await tmpApp.close();
+
+    // Основной модуль с указанием схемы
     module = await Test.createTestingModule({
       imports: [
         ConfigModule.forRoot({
@@ -35,8 +62,10 @@ describe('CourseEnrollmentRepo (integration)', () => {
         TypeOrmModule.forRootAsync({
           imports: [ConfigModule],
           inject: [ConfigService],
-          useFactory: (configService: ConfigService) =>
-            getTestingDatabaseConfig(configService) as any,
+          useFactory: (configService: ConfigService): TypeOrmModuleOptions => {
+            const config = getTestingDatabaseConfig(configService);
+            return { ...config, schema: schemaName };
+          },
         }),
         TypeOrmModule.forFeature([
           User,
@@ -67,6 +96,8 @@ describe('CourseEnrollmentRepo (integration)', () => {
   });
 
   afterAll(async () => {
+    // Удаляем схему после тестов
+    await dataSource.query(`DROP SCHEMA IF EXISTS "${schemaName}" CASCADE;`);
     await dataSource.destroy();
   });
 

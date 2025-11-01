@@ -1,7 +1,5 @@
-// courses.repository.spec.ts
-
 import { Test, TestingModule } from '@nestjs/testing';
-import { TypeOrmModule } from '@nestjs/typeorm';
+import { TypeOrmModule, TypeOrmModuleOptions } from '@nestjs/typeorm';
 import { DataSource, QueryFailedError } from 'typeorm';
 import { CourseRepo } from '../../courses.repository';
 import { Course } from '../../entities/course.entity';
@@ -11,7 +9,7 @@ import { Payment } from 'src/modules/payments/entities/payment.entity';
 import { User } from 'src/modules/users/entities/user.entity';
 import { UserProfile } from 'src/modules/users/entities/user-profile.entity';
 import { ConfigModule, ConfigService } from '@nestjs/config';
-import { getTestingDatabaseConfig } from 'src/common/utils/utils';
+import { createTestingSchema, getTestingDatabaseConfig } from 'src/common/utils/utils';
 import { v4 as uuidv4 } from 'uuid';
 import { RepositoryNotFoundError, RepositoryUnknownError } from 'src/common/errors/db-errors';
 import { CourseBuilder } from 'src/common/tests/builders/course.builder';
@@ -22,8 +20,11 @@ describe('CourseRepo (integration)', () => {
   let courseRepo: CourseRepo;
   let dataSource: DataSource;
   let course: Course;
+  let schemaName: string;
 
   beforeAll(async () => {
+    schemaName = `test_schema_${uuidv4().replace(/-/g, '')}`;
+
     module = await Test.createTestingModule({
       imports: [
         ConfigModule.forRoot({
@@ -34,8 +35,13 @@ describe('CourseRepo (integration)', () => {
         TypeOrmModule.forRootAsync({
           imports: [ConfigModule],
           inject: [ConfigService],
-          useFactory: (configService: ConfigService) =>
-            getTestingDatabaseConfig(configService) as any,
+          useFactory: async (
+            configService: ConfigService,
+          ): Promise<TypeOrmModuleOptions> => {
+            const config = getTestingDatabaseConfig(configService);
+            await createTestingSchema(configService, schemaName);
+            return { ...config, schema: schemaName };
+          },
         }),
         TypeOrmModule.forFeature([
           User,
@@ -59,12 +65,14 @@ describe('CourseRepo (integration)', () => {
   });
 
   afterAll(async () => {
+    // Удаляем схему после тестов
+    await dataSource.query(`DROP SCHEMA IF EXISTS "${schemaName}" CASCADE;`);
     await dataSource.destroy();
   });
 
   afterEach(async () => {
     await dataSource.query(
-      `TRUNCATE TABLE "payment", "course_enrollment", "course_lesson", "course", "user_profile", "user" RESTART IDENTITY CASCADE`,
+      `TRUNCATE TABLE "${schemaName}"."payment", "${schemaName}"."course_enrollment", "${schemaName}"."course_lesson", "${schemaName}"."course", "${schemaName}"."user_profile", "${schemaName}"."user" RESTART IDENTITY CASCADE`,
     );
   });
 

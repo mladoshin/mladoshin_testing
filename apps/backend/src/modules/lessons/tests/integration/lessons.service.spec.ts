@@ -1,153 +1,153 @@
+import { ConfigModule, ConfigService } from '@nestjs/config';
 import { Test, TestingModule } from '@nestjs/testing';
-import { LessonsService } from '../lessons.service';
-import { ICourseLessonRepo } from '../lessons.repository';
-import { RepositoryNotFoundError } from 'src/common/errors/db-errors';
-import {
-  NotFoundException,
-  InternalServerErrorException,
-} from '@nestjs/common';
-import { CreateLessonDto } from '../dto/create-lesson.dto';
-import { UpdateLessonDto } from '../dto/update-lesson.dto';
-import { CourseLessonDomain } from '../domains/lesson.domain';
-import { CourseLessonFactory } from './factories/course-lesson.factory';
-import { CourseLessonBuilder } from './builders/course-lesson.builder';
+import { TypeOrmModule, TypeOrmModuleOptions } from '@nestjs/typeorm';
+import { RepositoryNotFoundError, RepositoryUnknownError } from 'src/common/errors/db-errors';
+import { AppLoggerModule } from 'src/common/logging/log.module';
+import { CourseLessonBuilder } from 'src/common/tests/builders/lesson.builder';
+import { CourseBuilder } from 'src/common/tests/builders/course.builder';
+import { CourseLessonObjectMother } from 'src/common/tests/object-mothers/lesson-object-mother';
+import { createTestingSchema, getTestingDatabaseConfig } from 'src/common/utils/utils';
+import { CoursesModule } from 'src/modules/courses/courses.module';
+import { Course } from 'src/modules/courses/entities/course.entity';
+import { DataSource, Repository } from 'typeorm';
+import { v4 as uuidv4 } from 'uuid';
+import { LessonsModule } from '../../lessons.module';
+import { ILessonsService } from '../../lessons.service';
+import { CreateLessonDto } from '../../dto/create-lesson.dto';
+import { UpdateLessonDto } from '../../dto/update-lesson.dto';
+import { CourseLesson } from '../../entities/course-lesson.entity';
 
-describe('LessonsService', () => {
-  let service: LessonsService;
-  let repo: jest.Mocked<ICourseLessonRepo>;
+describe('LessonsService (Integration)', () => {
+  let service: ILessonsService;
+  let dataSource: DataSource;
+  let course: Course;
+  let lesson: CourseLesson;
+  let courseRepo: Repository<Course>;
+  let lessonRepo: Repository<CourseLesson>;
+  let schemaName: string;
 
-  beforeEach(async () => {
-    const repoMock: jest.Mocked<ICourseLessonRepo> = {
-      create: jest.fn(),
-      findAll: jest.fn(),
-      findOrFailById: jest.fn(),
-      update: jest.fn(),
-      delete: jest.fn(),
-      findAllByCourse: jest.fn(),
-      findById: jest.fn(),
-    };
+  beforeAll(async () => {
+    schemaName = `test_schema_${uuidv4().replace(/-/g, '')}`;
 
     const module: TestingModule = await Test.createTestingModule({
-      providers: [
-        LessonsService,
-        { provide: 'ICourseLessonRepo', useValue: repoMock },
+      imports: [
+        ConfigModule.forRoot({
+          isGlobal: true,
+          envFilePath: '.env.test',
+        }),
+        TypeOrmModule.forRootAsync({
+          imports: [ConfigModule],
+          inject: [ConfigService],
+          useFactory: async (
+            configService: ConfigService,
+          ): Promise<TypeOrmModuleOptions> => {
+            const config = getTestingDatabaseConfig(configService);
+            await createTestingSchema(configService, schemaName);
+            return { ...config, schema: schemaName };
+          },
+        }),
+        LessonsModule,
+        CoursesModule,
+        AppLoggerModule,
       ],
     }).compile();
 
-    service = module.get<LessonsService>(LessonsService);
-    repo = module.get('ICourseLessonRepo');
+    dataSource = module.get(DataSource);
+    service = module.get<ILessonsService>('ILessonsService');
+
+    // Репозитории
+    courseRepo = dataSource.getRepository(Course);
+    lessonRepo = dataSource.getRepository(CourseLesson);
   });
 
-  describe('create', () => {
-    it('✅ should create a lesson (positive)', async () => {
-      const dto: CreateLessonDto = new CourseLessonBuilder().buildCreateDto();
-      const lesson = CourseLessonFactory.default();
-
-      repo.create.mockResolvedValue(lesson);
-
-      const result = await service.create(dto);
-
-      expect(repo.create).toHaveBeenCalledWith(dto);
-      expect(result).toEqual(lesson);
-    });
-
-    it('⚡ should throw InternalServerErrorException on repo error', async () => {
-      const dto = new CourseLessonBuilder().buildCreateDto();
-      repo.create.mockRejectedValue(new Error('DB down'));
-      await expect(service.create(dto)).rejects.toThrow(Error);
-    });
+  afterAll(async () => {
+    // Удаляем схему после тестов
+    await dataSource.query(`DROP SCHEMA IF EXISTS "${schemaName}" CASCADE;`);
+    await dataSource.destroy();
   });
 
-  describe('findAll', () => {
-    it('✅ should return all lessons', async () => {
-      const lessons = [CourseLessonFactory.default()];
-      repo.findAll.mockResolvedValue(lessons);
+  beforeEach(async () => {
+    // Создаём курс через билдер
+    const courseData = new CourseBuilder().withName('Test Course').build();
+    course = await courseRepo.save(courseRepo.create(courseData as Course));
 
-      const result = await service.findAll();
-
-      expect(result).toEqual(lessons);
-    });
-
-    it('❌ should return empty array if no lessons (negative)', async () => {
-      repo.findAll.mockResolvedValue([]);
-      const result = await service.findAll();
-      expect(result).toEqual([]);
-    });
-
-    it('⚡ should throw InternalServerErrorException on repo error', async () => {
-      repo.findAll.mockRejectedValue(new Error('DB down'));
-      await expect(service.findAll()).rejects.toThrow(Error);
-    });
+    // Создаём урок через билдер
+    const lessonData = new CourseLessonBuilder().withCourseId(course.id).build();
+    lesson = await lessonRepo.save(lessonRepo.create(lessonData as CourseLesson));
   });
 
-  describe('findOne', () => {
-    it('✅ should return a lesson by id', async () => {
-      const lesson = CourseLessonFactory.default();
-      repo.findOrFailById.mockResolvedValue(lesson);
-
-      const result = await service.findOne('lesson-1');
-
-      expect(result).toEqual(lesson);
-    });
-
-    it('❌ should throw NotFoundException for invalid id', async () => {
-      repo.findOrFailById.mockRejectedValue(
-        new RepositoryNotFoundError('CourseLesson', 'invalid-id'),
-      );
-      await expect(service.findOne('invalid-id')).rejects.toThrow(
-        RepositoryNotFoundError,
-      );
-    });
-
-    it('⚡ should throw InternalServerErrorException on repo error', async () => {
-      repo.findOrFailById.mockRejectedValue(new Error('DB crashed'));
-      await expect(service.findOne('lesson-1')).rejects.toThrow(Error);
-    });
+  afterEach(async () => {
+    await dataSource.query(
+      `TRUNCATE TABLE "${schemaName}"."payment", "${schemaName}"."course_enrollment", "${schemaName}"."course_lesson", "${schemaName}"."course", "${schemaName}"."user_profile", "${schemaName}"."user" RESTART IDENTITY CASCADE`,
+    );
   });
 
-  describe('update', () => {
-    it('✅ should update a lesson', async () => {
-      const updateDto: UpdateLessonDto = new CourseLessonBuilder()
-        .withTitle('Updated')
-        .buildUpdateDto();
-      const lesson = CourseLessonFactory.default();
-      repo.update.mockResolvedValue({ ...lesson, ...updateDto });
-
-      const result = await service.update('lesson-1', updateDto);
-
-      expect(result.title).toBe('Updated');
-    });
-
-    it('⚡ should throw NotFoundException if lesson not found', async () => {
-      repo.update.mockRejectedValue(
-        new RepositoryNotFoundError('CourseLesson', 'lesson-1'),
-      );
-      await expect(service.update('lesson-1', { title: 'X' })).rejects.toThrow(
-        RepositoryNotFoundError,
-      );
-    });
+  // ---------- CREATE ----------
+  it('✅ должен создать урок', async () => {
+    const dto: CreateLessonDto = CourseLessonObjectMother.buildCreateDto({ course_id: course.id });
+    const createdLesson = await service.create(dto);
+    expect(createdLesson.title).toBe(dto.title);
+    expect(createdLesson.id).toBeDefined();
+    expect(createdLesson.content).toBe(dto.content);
+    expect(createdLesson.course_id).toBe(dto.course_id);
   });
 
-  describe('remove', () => {
-    it('✅ should remove a lesson', async () => {
-      const lesson = CourseLessonFactory.default();
-      repo.delete.mockResolvedValue(lesson);
+  it('❌ ошибка при создании урока с пустым названием', async () => {
+    const dto: CreateLessonDto = CourseLessonObjectMother.buildCreateDto({
+      title: null,
+      course_id: course.id,
+    } as any);
+    await expect(service.create(dto)).rejects.toThrow(RepositoryUnknownError);
+  });
 
-      const result = await service.remove('lesson-1');
+  // ---------- FIND ALL ----------
+  it('✅ возвращает один урок изначально', async () => {
+    const lessons = await service.findAll();
+    expect(lessons).toHaveLength(1);
+  });
 
-      expect(result).toEqual(lesson);
-    });
+  it('❌ возвращает пустой список после удаления урока', async () => {
+    await service.remove(lesson.id);
+    const lessons = await service.findAll();
+    expect(lessons).toEqual([]);
+  });
 
-    it('❌ should throw NotFoundException for invalid id', async () => {
-      repo.delete.mockRejectedValue(
-        new RepositoryNotFoundError('CourseLesson', ''),
-      );
-      await expect(service.remove('')).rejects.toThrow(RepositoryNotFoundError);
-    });
+  // ---------- FIND ONE ----------
+  it('✅ возвращает урок по id', async () => {
+    const found = await service.findOne(lesson.id);
+    expect(found.id).toBe(lesson.id);
+  });
 
-    it('⚡ should throw InternalServerErrorException on repo error', async () => {
-      repo.delete.mockRejectedValue(new Error('DB crashed'));
-      await expect(service.remove('lesson-1')).rejects.toThrow(Error);
-    });
+  it('❌ выбрасывает ошибку, если урок не существует', async () => {
+    await expect(service.findOne(uuidv4())).rejects.toThrow(
+      RepositoryNotFoundError,
+    );
+  });
+
+  // ---------- UPDATE ----------
+  it('✅ обновляет урок', async () => {
+    const dto: UpdateLessonDto = CourseLessonObjectMother.buildUpdateDto();
+    const updated = await service.update(lesson.id, dto);
+    expect(updated.title).toBe(dto.title);
+  });
+
+  it('❌ выбрасывает ошибку при обновлении несуществующего урока', async () => {
+    const dto: UpdateLessonDto = CourseLessonObjectMother.buildUpdateDto();
+
+    await expect(service.update(uuidv4(), dto)).rejects.toThrow(
+      RepositoryNotFoundError,
+    );
+  });
+
+  // ---------- REMOVE ----------
+  it('✅ удаляет урок', async () => {
+    const removed = await service.remove(lesson.id);
+    expect(removed.title).toBe(lesson.title);
+  });
+
+  it('❌ выбрасывает ошибку при удалении несуществующего урока', async () => {
+    await expect(service.remove(uuidv4())).rejects.toThrow(
+      RepositoryNotFoundError,
+    );
   });
 });

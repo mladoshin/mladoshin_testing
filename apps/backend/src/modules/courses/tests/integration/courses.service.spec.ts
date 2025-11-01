@@ -1,6 +1,6 @@
 import { ConfigModule, ConfigService } from '@nestjs/config';
 import { Test, TestingModule } from '@nestjs/testing';
-import { TypeOrmModule } from '@nestjs/typeorm';
+import { TypeOrmModule, TypeOrmModuleOptions } from '@nestjs/typeorm';
 import {
     RepositoryDuplicateError,
     RepositoryForbiddenError,
@@ -11,7 +11,7 @@ import { AppLoggerModule } from 'src/common/logging/log.module';
 import { CourseBuilder } from 'src/common/tests/builders/course.builder';
 import { UserBuilder } from 'src/common/tests/builders/user.builder';
 import { CourseObjectMother } from 'src/common/tests/object-mothers/course-object-mother';
-import { getTestingDatabaseConfig } from 'src/common/utils/utils';
+import { createTestingSchema, getTestingDatabaseConfig } from 'src/common/utils/utils';
 import { CourseEnrollmentsModule } from 'src/modules/course-enrollments/course-enrollments.module';
 import { LessonsModule } from 'src/modules/lessons/lessons.module';
 import { PaymentsModule } from 'src/modules/payments/payments.module';
@@ -32,8 +32,11 @@ describe('CoursesService (Integration)', () => {
   let course: Course;
   let userRepo: Repository<User>;
   let courseRepo: Repository<Course>;
+  let schemaName: string;
 
   beforeAll(async () => {
+    schemaName = `test_schema_${uuidv4().replace(/-/g, '')}`;
+
     const module: TestingModule = await Test.createTestingModule({
       imports: [
         ConfigModule.forRoot({
@@ -43,8 +46,13 @@ describe('CoursesService (Integration)', () => {
         TypeOrmModule.forRootAsync({
           imports: [ConfigModule],
           inject: [ConfigService],
-          useFactory: (configService: ConfigService) =>
-            getTestingDatabaseConfig(configService) as any,
+          useFactory: async (
+            configService: ConfigService,
+          ): Promise<TypeOrmModuleOptions> => {
+            const config = getTestingDatabaseConfig(configService);
+            await createTestingSchema(configService, schemaName);
+            return { ...config, schema: schemaName };
+          },
         }),
         CoursesModule,
         UsersModule,
@@ -63,6 +71,12 @@ describe('CoursesService (Integration)', () => {
     courseRepo = dataSource.getRepository(Course);
   });
 
+  afterAll(async () => {
+    // Удаляем схему после тестов
+    await dataSource.query(`DROP SCHEMA IF EXISTS "${schemaName}" CASCADE;`);
+    await dataSource.destroy();
+  });
+
   beforeEach(async () => {
     // Создаём объекты через билдер
     const userData = new UserBuilder().withEmail('test@user.com').build();
@@ -74,7 +88,7 @@ describe('CoursesService (Integration)', () => {
 
   afterEach(async () => {
     await dataSource.query(
-      `TRUNCATE TABLE "payment", "course_enrollment", "course_lesson", "course", "user_profile", "user" RESTART IDENTITY CASCADE`,
+      `TRUNCATE TABLE "${schemaName}"."payment", "${schemaName}"."course_enrollment", "${schemaName}"."course_lesson", "${schemaName}"."course", "${schemaName}"."user_profile", "${schemaName}"."user" RESTART IDENTITY CASCADE`,
     );
   });
 
