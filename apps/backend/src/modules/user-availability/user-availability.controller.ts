@@ -18,6 +18,8 @@ import { User } from '../auth/decorators/UserDecorator';
 import { UserAvailabilityResponse } from './dto/user-availability-response.dto';
 import { GetUserAvailabilitiesQueryDto } from './dto/get-user-availabilities-query.dto';
 import { IUserAvailabilityService } from './user-availability.service';
+import { ErrorMapper } from 'src/common/errors/error-mapper';
+import { RepositoryNotFoundError } from 'src/common/errors/db-errors';
 
 @Controller('user-availability')
 @UseGuards(JwtAuthGuard)
@@ -32,8 +34,12 @@ export class UserAvailabilityController {
     @User() user: JWTPayload,
     @Body() dto: CreateUserAvailabilityDto,
   ) {
-    const result = await this.service.create(user, dto);
-    return UserAvailabilityResponse.make(result);
+    try {
+      const result = await this.service.create(user, dto);
+      return UserAvailabilityResponse.make(result);
+    } catch (err) {
+      throw ErrorMapper.mapToHTTPError(err);
+    }
   }
 
   @Get()
@@ -41,15 +47,23 @@ export class UserAvailabilityController {
     @User() user: JWTPayload,
     @Query() query: GetUserAvailabilitiesQueryDto,
   ) {
-    const results = await this.service.findByUserAndCourse(user, query);
-    return UserAvailabilityResponse.collection(results);
+    try {
+      const results = await this.service.findByUserAndCourse(user, query);
+      return UserAvailabilityResponse.collection(results);
+    } catch (err) {
+      throw ErrorMapper.mapToHTTPError(err);
+    }
   }
 
   @Get(':id')
   async findOne(@Param('id') id: string) {
-    const result = await this.service.findById(id);
-    if (!result) throw new NotFoundException('UserAvailability not found');
-    return UserAvailabilityResponse.make(result);
+    try {
+      const result = await this.service.findById(id);
+      if (!result) throw new RepositoryNotFoundError('UserAvailability not found', 'UserAvailability');
+      return UserAvailabilityResponse.make(result);
+    } catch (err) {
+      throw ErrorMapper.mapToHTTPError(err);
+    }
   }
 
   @Patch(':id')
@@ -57,13 +71,21 @@ export class UserAvailabilityController {
     @Param('id') id: string,
     @Body() dto: UpdateUserAvailabilityDto,
   ) {
-    const result = await this.service.update(id, dto);
-    return UserAvailabilityResponse.make(result);
+    try {
+      const result = await this.service.update(id, dto);
+      return UserAvailabilityResponse.make(result);
+    } catch (err) {
+      throw ErrorMapper.mapToHTTPError(err);
+    }
   }
 
   @Delete(':id')
   async remove(@Param('id') id: string) {
-    const result = await this.service.delete(id);
-    return UserAvailabilityResponse.make(result);
+    try {
+      const result = await this.service.delete(id);
+      return UserAvailabilityResponse.make(result);
+    } catch (err) {
+      throw ErrorMapper.mapToHTTPError(err);
+    }
   }
 }

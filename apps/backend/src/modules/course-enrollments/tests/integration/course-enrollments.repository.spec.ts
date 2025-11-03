@@ -26,6 +26,10 @@ describe('CourseEnrollmentRepo (integration)', () => {
   let schemaName: string;
 
   beforeAll(async () => {
+    if (process.env.IS_OFFLINE === 'true') {
+      throw new Error('Cannot run integration tests in offline mode');
+    }
+
     schemaName = `test_schema_${uuidv4().replace(/-/g, '')}`;
 
     // Создаём схему в базе
@@ -156,7 +160,9 @@ describe('CourseEnrollmentRepo (integration)', () => {
   });
 
   it('should find all enrollments by course - no course', async () => {
-    const enrollments = await expect(courseEnrollmentRepo.findManyByCourse(uuidv4())).rejects.toThrow(RepositoryNotFoundError);
+    const enrollments = await expect(
+      courseEnrollmentRepo.findManyByCourse(uuidv4()),
+    ).rejects.toThrow(RepositoryNotFoundError);
   });
 
   it('should update enrollment status', async () => {

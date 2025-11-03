@@ -9,9 +9,15 @@ import { Payment } from 'src/modules/payments/entities/payment.entity';
 import { User } from 'src/modules/users/entities/user.entity';
 import { UserProfile } from 'src/modules/users/entities/user-profile.entity';
 import { ConfigModule, ConfigService } from '@nestjs/config';
-import { createTestingSchema, getTestingDatabaseConfig } from 'src/common/utils/utils';
+import {
+  createTestingSchema,
+  getTestingDatabaseConfig,
+} from 'src/common/utils/utils';
 import { v4 as uuidv4 } from 'uuid';
-import { RepositoryNotFoundError, RepositoryUnknownError } from 'src/common/errors/db-errors';
+import {
+  RepositoryNotFoundError,
+  RepositoryUnknownError,
+} from 'src/common/errors/db-errors';
 import { CourseLessonBuilder } from 'src/common/tests/builders/lesson.builder';
 import { CourseLessonObjectMother } from 'src/common/tests/object-mothers/lesson-object-mother';
 import { CourseBuilder } from 'src/common/tests/builders/course.builder';
@@ -25,6 +31,9 @@ describe('CourseLessonRepo (integration)', () => {
   let schemaName: string;
 
   beforeAll(async () => {
+    if (process.env.IS_OFFLINE === 'true') {
+      throw new Error('Cannot run integration tests in offline mode');
+    }
     schemaName = `test_schema_${uuidv4().replace(/-/g, '')}`;
 
     module = await Test.createTestingModule({
@@ -66,7 +75,9 @@ describe('CourseLessonRepo (integration)', () => {
     course = await courseRepo.save(courseData);
 
     const lessonRepo = dataSource.getRepository(CourseLesson);
-    const lessonData = new CourseLessonBuilder().withCourseId(course.id).build();
+    const lessonData = new CourseLessonBuilder()
+      .withCourseId(course.id)
+      .build();
     lesson = await lessonRepo.save(lessonData);
   });
 
@@ -84,7 +95,9 @@ describe('CourseLessonRepo (integration)', () => {
 
   // ✅ Positive test for create
   it('should create a lesson', async () => {
-    const dto = CourseLessonObjectMother.buildCreateDto({ course_id: course.id });
+    const dto = CourseLessonObjectMother.buildCreateDto({
+      course_id: course.id,
+    });
     const createdLesson = await lessonRepo.create(dto);
     expect(createdLesson).toMatchObject(dto);
     expect(createdLesson.id).toBeDefined();
@@ -92,8 +105,13 @@ describe('CourseLessonRepo (integration)', () => {
 
   // ❌ Negative test for create
   it('should throw when creating a lesson with invalid data', async () => {
-    const dto = CourseLessonObjectMother.buildCreateDto({ title: undefined, course_id: course.id });
-    await expect(lessonRepo.create(dto)).rejects.toThrow(RepositoryUnknownError);
+    const dto = CourseLessonObjectMother.buildCreateDto({
+      title: undefined,
+      course_id: course.id,
+    });
+    await expect(lessonRepo.create(dto)).rejects.toThrow(
+      RepositoryUnknownError,
+    );
   });
 
   // ✅ Positive test for findAll

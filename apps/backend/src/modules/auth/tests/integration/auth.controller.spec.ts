@@ -25,6 +25,10 @@ describe('AuthController (Integration)', () => {
   };
 
   beforeAll(async () => {
+    if (process.env.IS_OFFLINE === 'true') {
+      throw new Error('Cannot run integration tests in offline mode');
+    }
+
     schemaName = `test_schema_${uuidv4().replace(/-/g, '')}`;
 
     // Создаём схему в базе

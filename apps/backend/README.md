@@ -1,98 +1,322 @@
-<p align="center">
-  <a href="http://nestjs.com/" target="blank"><img src="https://nestjs.com/img/logo-small.svg" width="120" alt="Nest Logo" /></a>
-</p>
+# Backend
 
-[circleci-image]: https://img.shields.io/circleci/build/github/nestjs/nest/master?token=abc123def456
-[circleci-url]: https://circleci.com/gh/nestjs/nest
+## Описание
 
-  <p align="center">A progressive <a href="http://nodejs.org" target="_blank">Node.js</a> framework for building efficient and scalable server-side applications.</p>
-    <p align="center">
-<a href="https://www.npmjs.com/~nestjscore" target="_blank"><img src="https://img.shields.io/npm/v/@nestjs/core.svg" alt="NPM Version" /></a>
-<a href="https://www.npmjs.com/~nestjscore" target="_blank"><img src="https://img.shields.io/npm/l/@nestjs/core.svg" alt="Package License" /></a>
-<a href="https://www.npmjs.com/~nestjscore" target="_blank"><img src="https://img.shields.io/npm/dm/@nestjs/common.svg" alt="NPM Downloads" /></a>
-<a href="https://circleci.com/gh/nestjs/nest" target="_blank"><img src="https://img.shields.io/circleci/build/github/nestjs/nest/master" alt="CircleCI" /></a>
-<a href="https://discord.gg/G7Qnnhy" target="_blank"><img src="https://img.shields.io/badge/discord-online-brightgreen.svg" alt="Discord"/></a>
-<a href="https://opencollective.com/nest#backer" target="_blank"><img src="https://opencollective.com/nest/backers/badge.svg" alt="Backers on Open Collective" /></a>
-<a href="https://opencollective.com/nest#sponsor" target="_blank"><img src="https://opencollective.com/nest/sponsors/badge.svg" alt="Sponsors on Open Collective" /></a>
-  <a href="https://paypal.me/kamilmysliwiec" target="_blank"><img src="https://img.shields.io/badge/Donate-PayPal-ff3f59.svg" alt="Donate us"/></a>
-    <a href="https://opencollective.com/nest#sponsor"  target="_blank"><img src="https://img.shields.io/badge/Support%20us-Open%20Collective-41B883.svg" alt="Support us"></a>
-  <a href="https://twitter.com/nestframework" target="_blank"><img src="https://img.shields.io/twitter/follow/nestframework.svg?style=social&label=Follow" alt="Follow us on Twitter"></a>
-</p>
-  <!--[![Backers on Open Collective](https://opencollective.com/nest/backers/badge.svg)](https://opencollective.com/nest#backer)
-  [![Sponsors on Open Collective](https://opencollective.com/nest/sponsors/badge.svg)](https://opencollective.com/nest#sponsor)-->
+Backend приложение построено на NestJS с использованием TypeScript. Реализует REST API для системы управления онлайн-курсами. Включает модули аутентификации, работы с пользователями, курсами, уроками и платежами.
 
-## Description
+## Стек технологий
 
-[Nest](https://github.com/nestjs/nest) framework TypeScript starter repository.
+- **Node.js** + **TypeScript** — основной язык разработки
+- **NestJS** — фреймворк для построения серверных приложений
+- **TypeORM** — ORM для работы с базой данных
+- **PostgreSQL** — основная СУБД
+- **JWT** — авторизация через токены
+- **bcryptjs** — хеширование паролей
+- **Jest** — фреймворк для unit и integration тестов
+- **Allure** — красивые отчеты по результатам тестирования
 
-## Project setup
+## Установка зависимостей
 
 ```bash
-$ pnpm install
+npm install
+# или
+pnpm install
 ```
 
-## Compile and run the project
+## Конфигурация
+
+Создайте файлы окружения:
 
 ```bash
-# development
-$ pnpm run start
+# Для разработки
+.env
 
-# watch mode
-$ pnpm run start:dev
-
-# production mode
-$ pnpm run start:prod
+# Для тестов
+.env.test
 ```
 
-## Run tests
+Основные переменные окружения:
+- `DB_HOST`, `DB_PORT`, `DB_USERNAME`, `DB_PASSWORD`, `DB_DATABASE` — настройки PostgreSQL
+- `JWT_SECRET`, `JWT_EXPIRES_IN` — настройки JWT
+- `JWT_REFRESH_SECRET`, `JWT_REFRESH_EXPIRES_IN` — refresh токены
+
+## Запуск приложения
 
 ```bash
-# unit tests
-$ pnpm run test
+# Разработка с hot-reload
+npm run start:dev
 
-# e2e tests
-$ pnpm run test:e2e
+# Debug режим
+npm run start:debug
 
-# test coverage
-$ pnpm run test:cov
+# Production сборка и запуск
+npm run build
+npm run start:prod
 ```
 
-## Deployment
-
-When you're ready to deploy your NestJS application to production, there are some key steps you can take to ensure it runs as efficiently as possible. Check out the [deployment documentation](https://docs.nestjs.com/deployment) for more information.
-
-If you are looking for a cloud-based platform to deploy your NestJS application, check out [Mau](https://mau.nestjs.com), our official platform for deploying NestJS applications on AWS. Mau makes deployment straightforward and fast, requiring just a few simple steps:
+### Docker
 
 ```bash
-$ pnpm install -g mau
-$ mau deploy
+# Запуск PostgreSQL через Docker Compose
+docker-compose up -d
 ```
 
-With Mau, you can deploy your application in just a few clicks, allowing you to focus on building features rather than managing infrastructure.
+## Запуск тестов
 
-## Resources
+Проект содержит unit и integration тесты. Integration тесты автоматически создают изолированные схемы в PostgreSQL для каждого тест-файла.
 
-Check out a few resources that may come in handy when working with NestJS:
+### Механизм параллелизации в Jest
 
-- Visit the [NestJS Documentation](https://docs.nestjs.com) to learn more about the framework.
-- For questions and support, please visit our [Discord channel](https://discord.gg/G7Qnnhy).
-- To dive deeper and get more hands-on experience, check out our official video [courses](https://courses.nestjs.com/).
-- Deploy your application to AWS with the help of [NestJS Mau](https://mau.nestjs.com) in just a few clicks.
-- Visualize your application graph and interact with the NestJS application in real-time using [NestJS Devtools](https://devtools.nestjs.com).
-- Need help with your project (part-time to full-time)? Check out our official [enterprise support](https://enterprise.nestjs.com).
-- To stay in the loop and get updates, follow us on [X](https://x.com/nestframework) and [LinkedIn](https://linkedin.com/company/nestjs).
-- Looking for a job, or have a job to offer? Check out our official [Jobs board](https://jobs.nestjs.com).
+Jest использует **worker pool** для параллельного запуска тестов. Важно понимать:
 
-## Support
+**Уровень параллелизации:**
+- 🔹 **Один тест-файл = один worker** — Jest **НЕ** делит тесты внутри одного файла между воркерами
+- 🔹 Все тесты в рамках одного `.spec.ts` файла выполняются **последовательно** в одном процессе
+- 🔹 Параллелизация происходит только между **разными файлами**
 
-Nest is an MIT-licensed open source project. It can grow thanks to the sponsors and support by the amazing backers. If you'd like to join them, please [read more here](https://docs.nestjs.com/support).
+```
+┌──────────────────────────────────────────────────────────┐
+│           Jest Runner (главный процесс)                   │
+└──────────────────────────────────────────────────────────┘
+        │
+        ├─────────┬─────────┬─────────┬─────────┐
+        ▼         ▼         ▼         ▼         ▼
+    Worker 1  Worker 2  Worker 3  Worker 4  (очередь...)
+        │         │         │         │
+        ▼         ▼         ▼         ▼
+  auth.spec  user.spec course.spec payment.spec
+   (все it    (все it    (все it    (все it
+  внутри →)  внутри →)  внутри →)  внутри →)
+```
 
-## Stay in touch
+**Конфигурация воркеров:**
 
-- Author - [Kamil Myśliwiec](https://twitter.com/kammysliwiec)
-- Website - [https://nestjs.com](https://nestjs.com/)
-- Twitter - [@nestframework](https://twitter.com/nestframework)
+| Параметр | Описание | Значение в проекте |
+|----------|----------|-------------------|
+| `--maxWorkers=N` | Количество параллельных процессов | `4` (для parallel режима) |
+| `--runInBand` | Последовательное выполнение в одном процессе | Sequential режим |
+| По умолчанию | Если не указано, Jest использует `CPU cores - 1` | На этой машине: `11` воркеров |
 
-## License
+**В нашем проекте:**
+- 📁 Всего тестовых файлов: **35**
+- ⚙️ Параллельный режим: **4 воркера** → максимум 4 файла одновременно
+- 🔄 Последовательный режим: **1 процесс** → все файлы по очереди
 
-Nest is [MIT licensed](https://github.com/nestjs/nest/blob/master/LICENSE).
+**Пример распределения:**
+```
+Worker 1: auth.service.spec.ts    → выполняет все it/describe внутри
+Worker 2: user.service.spec.ts    → выполняет все it/describe внутри
+Worker 3: course.service.spec.ts  → выполняет все it/describe внутри
+Worker 4: payment.service.spec.ts → выполняет все it/describe внутри
+```
+
+После завершения любого воркера, он берет следующий файл из очереди.
+
+**Настройка в jest.config.ts:**
+```typescript
+// Без явного указания maxWorkers в конфиге
+// Управляется через CLI флаги в package.json
+```
+
+### Базовые команды через npm
+
+```bash
+# Параллельный запуск (быстрее, 4 воркера)
+npm run test:parallel
+
+# Последовательный запуск (медленнее, но стабильнее)
+npm run test:sequential
+
+# С рандомизацией порядка (для проверки независимости тестов)
+npm run test:parallel:random
+npm run test:sequential:random
+
+# С автогенерацией отчета Allure и его открытием
+npm run test
+
+# Watch режим для разработки
+npm run test:watch
+
+# С покрытием кода
+npm run test:cov
+```
+
+### Скрипт с расширенными опциями
+
+Для более гибкого запуска используйте bash-скрипт:
+
+```bash
+./run-tests.sh [OPTIONS]
+```
+
+**Доступные опции:**
+
+| Флаг | Описание |
+|------|----------|
+| `-o` | **Offline режим** — пропускает integration тесты (устанавливает `IS_OFFLINE=true`) |
+| `-m MODE` | **Режим выполнения** — `parallel` (по умолчанию) или `sequential` |
+| `-r` | **Рандомизация** — случайный порядок выполнения тестов |
+| `-s` | **Показать Allure** — автоматически открывает отчет после завершения |
+| `-t PATH` | **Конкретный тест** — запускает только указанный файл или папку |
+| `-h` | **Справка** — показывает список всех опций |
+
+**Примеры использования:**
+
+```bash
+# Простой параллельный запуск с отчетом
+./run-tests.sh -s
+
+# Последовательно без интеграционных тестов
+./run-tests.sh -o -m sequential
+
+# Рандомный порядок с отчетом (проверка на flaky tests)
+./run-tests.sh -r -s
+
+# Только auth модуль, последовательно
+./run-tests.sh -t src/modules/auth/tests -m sequential -s
+
+# Offline режим с рандомизацией
+./run-tests.sh -o -r -s
+```
+
+### Кастомизация параллелизации
+
+Если хотите изменить количество воркеров:
+
+```bash
+# 8 воркеров (для мощных машин)
+jest --maxWorkers=8
+
+# 50% от доступных CPU
+jest --maxWorkers=50%
+
+# Автоматически (CPU cores - 1)
+jest
+
+# Один процесс (отладка)
+jest --runInBand
+```
+
+Или измените в `package.json`:
+```json
+"test:parallel": "jest --maxWorkers=8",  // было: 4
+```
+
+**Рекомендации:**
+- 💻 **Development:** 2-4 воркера (быстро + не перегружает систему)
+- 🏢 **CI/CD:** 50% или авто (оптимально для серверов)
+- 🐛 **Debugging:** `--runInBand` (последовательно)
+- 🔍 **Flaky tests:** `--runInBand` (исключает race conditions между файлами)
+
+**Анализ параллелизации:**
+```bash
+# Получить детальную информацию о настройках параллелизации
+./scripts/check-parallelization.sh
+```
+
+📖 **Подробнее:** [Детальная документация по параллелизации](./docs/PARALLELIZATION.md)
+
+### Запуск конкретных тестов
+
+```bash
+# Один файл
+npm run test:parallel -- auth.controller.spec.ts
+
+# Вся папка
+npm run test:parallel -- src/modules/auth
+
+# По паттерну
+npm run test:parallel -- --testNamePattern="login"
+```
+
+## Отчеты Allure
+
+Allure генерирует красивые HTML-отчеты с детальной информацией о прохождении тестов, включая:
+- Статистику успешных/упавших тестов
+- Временные метрики
+- История прошлых запусков
+- Детали ошибок и стек-трейсы
+
+### Команды работы с отчетами
+
+```bash
+# Открыть существующий отчет в браузере
+npm run allure:show
+
+# Сгенерировать новый отчет из текущих результатов
+npm run allure:append
+
+# Подготовить историю перед новым запуском
+npm run allure:prepare
+
+# Полностью очистить результаты и отчеты
+npm run allure:clean
+
+# Пересоздать отчет с нуля
+npm run allure:rewrite
+```
+
+### Структура
+
+- `allure-results/` — JSON файлы с результатами тестов
+- `allure-report/` — сгенерированный HTML отчет
+- `allure-report/history/` — история прошлых запусков
+
+**Примечание:** История автоматически сохраняется между запусками для отслеживания трендов.
+
+## Дополнительные команды
+
+```bash
+# Консольный интерфейс для работы с БД
+npm run console
+
+# Обновить PostgreSQL функции
+npm run pg:update-function
+npm run pg:update-test-function
+
+# Линтинг и форматирование
+npm run lint
+npm run format
+
+# Анализ параллелизации тестов
+./scripts/check-parallelization.sh
+```
+
+## Структура проекта
+
+```
+src/
+├── common/              # Общие утилиты, декораторы, guards
+├── modules/
+│   ├── auth/           # Аутентификация и авторизация
+│   ├── user/           # Управление пользователями
+│   ├── course/         # Курсы
+│   ├── lesson/         # Уроки
+│   └── payment/        # Платежи
+└── main.ts             # Точка входа
+
+test/                    # E2E тесты
+
+docs/                    # Документация
+├── PARALLELIZATION.md           # Детальная документация по параллелизации
+├── PARALLELIZATION_SUMMARY.md   # Сводка анализа
+└── PARALLELIZATION_CHEATSHEET.md # Шпаргалка
+
+scripts/
+└── check-parallelization.sh     # Скрипт анализа параллелизации
+```
+
+## Troubleshooting
+
+**Тесты падают с ошибками подключения к БД:**
+- Проверьте настройки в `.env.test`
+- Убедитесь, что PostgreSQL запущен
+- Проверьте права доступа пользователя БД
+
+**Offline режим:**
+- Используйте флаг `-o` для пропуска integration тестов
+- Полезно при отсутствии доступа к БД или в CI/CD
+
+**Allure не открывается:**
+- Убедитесь, что Allure установлен: `npm install -g allure-commandline`
+- Проверьте наличие результатов в `allure-results/`

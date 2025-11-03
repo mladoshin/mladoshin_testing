@@ -1,6 +1,5 @@
 import { Inject, Injectable } from '@nestjs/common';
 import { JWTPayload } from '../auth/guards/AuthGuard';
-import { ErrorMapper } from 'src/common/errors/error-mapper';
 import { IUserAvailabilityRepo } from './user-availability.repository';
 import { CreateUserAvailabilityDto } from './dto/create-user-availability.dto';
 import { UserAvailabilityDomain } from './domains/user-availability.domain';
@@ -32,53 +31,33 @@ export class UserAvailabilityService implements IUserAvailabilityService {
   ) {}
 
   async create(user: JWTPayload, data: CreateUserAvailabilityDto) {
-    try {
-      const entities = await this.repo.create(user.id, data);
-      return entities;
-    } catch (err) {
-      throw ErrorMapper.mapToHTTPError(err);
-    }
+    const entities = await this.repo.create(user.id, data);
+    return entities;
   }
 
   async findByUserAndCourse(
     user: JWTPayload,
     query: GetUserAvailabilitiesQueryDto,
   ) {
-    try {
-      const entities = await this.repo.findAllByUserAndCourse(
-        user.id,
-        query.course_id,
-      );
-      return entities;
-    } catch (err) {
-      throw ErrorMapper.mapToHTTPError(err);
-    }
+    const entities = await this.repo.findAllByUserAndCourse(
+      user.id,
+      query.course_id,
+    );
+    return entities;
   }
 
   async findById(id: string) {
-    try {
-      const entity = await this.repo.findById(id);
-      return entity;
-    } catch (err) {
-      throw ErrorMapper.mapToHTTPError(err);
-    }
+    const entity = await this.repo.findById(id);
+    return entity;
   }
 
   async update(id: string, data: UpdateUserAvailabilityDto) {
-    try {
-      const entity = await this.repo.update(id, data);
-      return entity;
-    } catch (err) {
-      throw ErrorMapper.mapToHTTPError(err);
-    }
+    const entity = await this.repo.update(id, data);
+    return entity;
   }
 
   async delete(id: string) {
-    try {
-      const entity = await this.repo.delete(id);
-      return entity;
-    } catch (err) {
-      throw ErrorMapper.mapToHTTPError(err);
-    }
+    const entity = await this.repo.delete(id);
+    return entity;
   }
 }

@@ -9,9 +9,15 @@ import { Payment } from 'src/modules/payments/entities/payment.entity';
 import { User } from 'src/modules/users/entities/user.entity';
 import { UserProfile } from 'src/modules/users/entities/user-profile.entity';
 import { ConfigModule, ConfigService } from '@nestjs/config';
-import { createTestingSchema, getTestingDatabaseConfig } from 'src/common/utils/utils';
+import {
+  createTestingSchema,
+  getTestingDatabaseConfig,
+} from 'src/common/utils/utils';
 import { v4 as uuidv4 } from 'uuid';
-import { RepositoryNotFoundError, RepositoryUnknownError } from 'src/common/errors/db-errors';
+import {
+  RepositoryNotFoundError,
+  RepositoryUnknownError,
+} from 'src/common/errors/db-errors';
 import { CourseBuilder } from 'src/common/tests/builders/course.builder';
 import { CourseObjectMother } from 'src/common/tests/object-mothers/course-object-mother';
 
@@ -23,6 +29,9 @@ describe('CourseRepo (integration)', () => {
   let schemaName: string;
 
   beforeAll(async () => {
+    if (process.env.IS_OFFLINE === 'true') {
+      throw new Error('Cannot run integration tests in offline mode');
+    }
     schemaName = `test_schema_${uuidv4().replace(/-/g, '')}`;
 
     module = await Test.createTestingModule({
@@ -86,7 +95,9 @@ describe('CourseRepo (integration)', () => {
   // ❌ Negative test for create
   it('should create a course', async () => {
     const dto = CourseObjectMother.buildCreateDto({ name: undefined });
-    await expect(courseRepo.create(dto)).rejects.toThrow(RepositoryUnknownError);
+    await expect(courseRepo.create(dto)).rejects.toThrow(
+      RepositoryUnknownError,
+    );
   });
 
   it('should find all courses', async () => {

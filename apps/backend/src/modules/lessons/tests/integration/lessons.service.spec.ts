@@ -1,12 +1,18 @@
 import { ConfigModule, ConfigService } from '@nestjs/config';
 import { Test, TestingModule } from '@nestjs/testing';
 import { TypeOrmModule, TypeOrmModuleOptions } from '@nestjs/typeorm';
-import { RepositoryNotFoundError, RepositoryUnknownError } from 'src/common/errors/db-errors';
+import {
+  RepositoryNotFoundError,
+  RepositoryUnknownError,
+} from 'src/common/errors/db-errors';
 import { AppLoggerModule } from 'src/common/logging/log.module';
 import { CourseLessonBuilder } from 'src/common/tests/builders/lesson.builder';
 import { CourseBuilder } from 'src/common/tests/builders/course.builder';
 import { CourseLessonObjectMother } from 'src/common/tests/object-mothers/lesson-object-mother';
-import { createTestingSchema, getTestingDatabaseConfig } from 'src/common/utils/utils';
+import {
+  createTestingSchema,
+  getTestingDatabaseConfig,
+} from 'src/common/utils/utils';
 import { CoursesModule } from 'src/modules/courses/courses.module';
 import { Course } from 'src/modules/courses/entities/course.entity';
 import { DataSource, Repository } from 'typeorm';
@@ -27,6 +33,9 @@ describe('LessonsService (Integration)', () => {
   let schemaName: string;
 
   beforeAll(async () => {
+    if (process.env.IS_OFFLINE === 'true') {
+      throw new Error('Cannot run integration tests in offline mode');
+    }
     schemaName = `test_schema_${uuidv4().replace(/-/g, '')}`;
 
     const module: TestingModule = await Test.createTestingModule({
@@ -72,8 +81,12 @@ describe('LessonsService (Integration)', () => {
     course = await courseRepo.save(courseRepo.create(courseData as Course));
 
     // Создаём урок через билдер
-    const lessonData = new CourseLessonBuilder().withCourseId(course.id).build();
-    lesson = await lessonRepo.save(lessonRepo.create(lessonData as CourseLesson));
+    const lessonData = new CourseLessonBuilder()
+      .withCourseId(course.id)
+      .build();
+    lesson = await lessonRepo.save(
+      lessonRepo.create(lessonData as CourseLesson),
+    );
   });
 
   afterEach(async () => {
@@ -84,7 +97,9 @@ describe('LessonsService (Integration)', () => {
 
   // ---------- CREATE ----------
   it('✅ должен создать урок', async () => {
-    const dto: CreateLessonDto = CourseLessonObjectMother.buildCreateDto({ course_id: course.id });
+    const dto: CreateLessonDto = CourseLessonObjectMother.buildCreateDto({
+      course_id: course.id,
+    });
     const createdLesson = await service.create(dto);
     expect(createdLesson.title).toBe(dto.title);
     expect(createdLesson.id).toBeDefined();

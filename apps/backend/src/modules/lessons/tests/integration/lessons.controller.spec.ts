@@ -41,6 +41,9 @@ describe('LessonsController (integration)', () => {
   let schemaName: string;
 
   beforeAll(async () => {
+    if (process.env.IS_OFFLINE === 'true') {
+      throw new Error('Cannot run integration tests in offline mode');
+    }
     schemaName = `test_schema_${uuidv4().replace(/-/g, '')}`;
 
     // Основной модуль с указанием схемы

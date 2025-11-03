@@ -15,8 +15,19 @@
     "start:debug": "nest start --debug --watch",
     "start:prod": "node dist/main",
     "lint": "eslint \"{src,apps,libs,test}/**/*.ts\" --fix",
-    "test": "jest & allure generate allure-results --clean -o allure-report",
-    "show-report": "allure serve allure-results",
+
+    "test:parallel": "jest --maxWorkers=4",
+    "test:sequential": "jest --runInBand",
+    "test:parallel:random": "jest --maxWorkers=4 --config jest.config.random.ts",
+    "test:sequential:random": "jest --runInBand --config jest.config.random.ts",
+
+
+    "test": "npm run allure:prepare && jest && npm run allure:append && npm run allure:show",
+    "allure:clean": "rm -rf allure-results allure-report && mkdir -p allure-results allure-report",
+    "allure:prepare": "rm -rf allure-results/history && cp -r allure-report/history allure-results/history 2>/dev/null || true",
+    "allure:append": "allure generate allure-results -o allure-report --clean",
+    "allure:rewrite": "rm -rf allure-results allure-report && allure generate allure-results -o allure-report --clean",
+    "allure:show": "allure open allure-report",
     "test:watch": "jest --watch",
     "test:cov": "jest --coverage",
     "test:debug": "node --inspect-brk -r tsconfig-paths/register -r ts-node/register node_modules/.bin/jest --runInBand",
@@ -48,6 +59,8 @@
   "devDependencies": {
     "@eslint/eslintrc": "^3.2.0",
     "@eslint/js": "^9.18.0",
+    "@jest/test-result": "^30.2.0",
+    "@jest/test-sequencer": "^30.2.0",
     "@nestjs/cli": "^11.0.0",
     "@nestjs/schematics": "^11.0.0",
     "@nestjs/testing": "^11.0.12",

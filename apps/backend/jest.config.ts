@@ -1,7 +1,5 @@
 // jest.config.ts
 import type { Config } from 'jest';
-import { pathsToModuleNameMapper } from 'ts-jest';
-import { compilerOptions } from './tsconfig.json';
 
 const config: Config = {
   // 1) Используем ts-jest для трансформации TypeScript :contentReference[oaicite:0]{index=0}
