@@ -21,7 +21,18 @@ All commands should be run from the `apps/backend/` directory, but the build con
 
 ## Quick Start - Running Tests in Docker
 
-### 1. Run all tests in Docker
+### 1. Run unit tests (no database required)
+```bash
+docker compose -f docker-compose.test.yml run --rm test-runner-unit --build
+```
+
+This will:
+- Build the test runner image with all dependencies
+- Run unit tests in parallel (4 workers)
+- No database or external dependencies needed
+- Generate Allure test results in `./allure-results`
+
+### 2. Run all tests with database
 ```bash
 docker compose -f docker-compose.test.yml up test-runner --build
 ```
@@ -32,7 +43,22 @@ This will:
 - Run all tests in parallel (4 workers)
 - Generate Allure test results in `./allure-results`
 
-### 2. Run specific test modes
+### 3. Run specific test modes
+
+**Unit tests only (fast, no database):**
+```bash
+docker compose -f docker-compose.test.yml run --rm test-runner-unit
+```
+
+**Integration tests (with database):**
+```bash
+docker compose -f docker-compose.test.yml run --rm test-runner pnpm run test:integration
+```
+
+**E2E tests (with full stack):**
+```bash
+docker compose -f docker-compose.test.yml run --rm test-runner pnpm run test:e2e
+```
 
 **Sequential tests:**
 ```bash
@@ -44,17 +70,12 @@ docker compose -f docker-compose.test.yml run --rm test-runner pnpm run test:seq
 docker compose -f docker-compose.test.yml run --rm test-runner pnpm run test:parallel:random
 ```
 
-**Offline mode (skip integration tests):**
-```bash
-docker compose -f docker-compose.test.yml run --rm -e IS_OFFLINE=true test-runner pnpm run test:parallel
-```
-
 **Specific test file:**
 ```bash
 docker compose -f docker-compose.test.yml run --rm test-runner pnpm run test:parallel -- auth.service.spec.ts
 ```
 
-### 3. View test results
+### 4. View test results
 
 After tests complete, view the Allure report:
 ```bash
@@ -118,15 +139,33 @@ docker compose -f docker-compose.test.yml down -v --rmi all
 
 ## Troubleshooting
 
+### Permission issues with test results
+
+If you see errors like `EACCES: permission denied, open 'allure-results/...'`:
+
+**Quick fix:**
+```bash
+# Run the permission fix script
+./scripts/fix-permissions.sh
+```
+
+**Manual fix:**
+```bash
+# Fix permissions for mounted volumes
+chmod -R 777 allure-results allure-report logs
+
+# Or fix ownership of generated files
+sudo chown -R $USER:$USER allure-results allure-report logs
+```
+
+**Why this happens:**
+- Docker volumes are mounted from host to container
+- The test container needs write access to these directories
+- The test container runs as root for simplicity in test environment
+
 ### Tests fail to connect to database
 - Ensure PostgreSQL container is healthy: `docker compose -f docker-compose.test.yml ps`
 - Check logs: `docker compose -f docker-compose.test.yml logs postgres-test`
-
-### Permission issues with test results
-```bash
-# Fix ownership of generated files
-sudo chown -R $USER:$USER allure-results allure-report
-```
 
 ### Rebuild containers after code changes
 ```bash
@@ -173,16 +212,18 @@ If a stage fails:
 #### Running Specific Test Stages Locally
 
 ```bash
-# Unit tests only (no database required)
-docker compose -f docker-compose.test.yml run --rm test-runner pnpm run test:unit
+# Unit tests only (no database required, fastest)
+docker compose -f docker-compose.test.yml run --rm test-runner-unit
 
 # Integration tests (requires PostgreSQL)
 docker compose -f docker-compose.test.yml up -d postgres-test
 docker compose -f docker-compose.test.yml run --rm test-runner pnpm run test:integration
+docker compose -f docker-compose.test.yml down
 
 # E2E tests (requires full stack)
 docker compose -f docker-compose.test.yml up -d postgres-test backend-test
 docker compose -f docker-compose.test.yml run --rm test-runner pnpm run test:e2e
+docker compose -f docker-compose.test.yml down
 ```
 
 ### Manual CI/CD Simulation
@@ -194,7 +235,7 @@ To simulate the CI/CD pipeline locally:
 set -e
 
 echo "Running Unit Tests..."
-docker compose -f docker-compose.test.yml run --rm test-runner pnpm run test:unit || {
+docker compose -f docker-compose.test.yml run --rm test-runner-unit || {
   echo "Unit tests failed. Stopping pipeline."
   ./scripts/create-skipped-tests.sh integration
   ./scripts/create-skipped-tests.sh e2e

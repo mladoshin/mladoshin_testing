@@ -54,9 +54,9 @@ Location: `.github/workflows/test.yml`
 
 #### 1. `unit-tests`
 - **Runs**: Always on push/PR
-- **Environment**: Docker container (test-runner)
-- **Database**: Not required
-- **Command**: `pnpm run test:unit`
+- **Environment**: Docker container (test-runner-unit)
+- **Database**: Not required (no postgres dependency)
+- **Command**: Service runs `pnpm run test:unit` automatically
 - **Outcome**: If fails → stops pipeline
 
 #### 2. `integration-tests`
@@ -197,9 +197,9 @@ Setup required:
 ### Run individual stages
 
 ```bash
-# Unit tests
+# Unit tests (no database required - fastest)
 cd apps/backend
-docker compose -f docker-compose.test.yml run --rm test-runner pnpm run test:unit
+docker compose -f docker-compose.test.yml run --rm test-runner-unit
 
 # Integration tests (needs database)
 docker compose -f docker-compose.test.yml up -d postgres-test
@@ -224,7 +224,7 @@ echo "🧪 Starting CI/CD Pipeline Simulation..."
 
 # Unit Tests
 echo "▶️  Running Unit Tests..."
-docker compose -f docker-compose.test.yml run --rm test-runner pnpm run test:unit
+docker compose -f docker-compose.test.yml run --rm test-runner-unit
 if [ $? -ne 0 ]; then
   echo "❌ Unit tests failed. Pipeline stopped."
   ./scripts/create-skipped-tests.sh integration

@@ -31,17 +31,21 @@ jobs:
       - name: Create test environment file
         run: cp .env.docker.test .env.docker.test.local
 
+      - name: Prepare test directories
+        run: |
+          mkdir -p allure-results allure-report logs
+          chmod -R 777 allure-results allure-report logs
+
       - name: Build test runner image
         run: |
           cd ../..
-          docker compose -f apps/backend/docker-compose.test.yml build test-runner
+          docker compose -f apps/backend/docker-compose.test.yml build test-runner-unit
 
       - name: Run unit tests
         id: unit_tests
         run: |
           docker compose -f docker-compose.test.yml run --rm \
-            -e TEST_STAGE=unit \
-            test-runner pnpm run test:unit
+            test-runner-unit
         continue-on-error: true
 
       - name: Save unit test results
@@ -84,6 +88,11 @@ jobs:
 
       - name: Create test environment file
         run: cp .env.docker.test .env.docker.test.local
+
+      - name: Prepare test directories
+        run: |
+          mkdir -p allure-results allure-report logs
+          chmod -R 777 allure-results allure-report logs
 
       - name: Build and start PostgreSQL
         run: |
@@ -139,6 +148,11 @@ jobs:
 
       - name: Create test environment file
         run: cp .env.docker.test .env.docker.test.local
+
+      - name: Prepare test directories
+        run: |
+          mkdir -p allure-results allure-report logs
+          chmod -R 777 allure-results allure-report logs
 
       - name: Build and start services
         run: |

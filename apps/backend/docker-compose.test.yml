@@ -52,6 +52,25 @@ services:
       - ./logs:/workspace/apps/backend/logs
     command: sh -c "pnpm run pg:update-function && node dist/main"
 
+  # Test runner for unit tests (no database required)
+  test-runner-unit:
+    container_name: school_test_runner_unit
+    build:
+      context: ../..
+      dockerfile: apps/backend/Dockerfile.test
+    env_file:
+      - .env.docker.test
+    environment:
+      JWT_SECRET: ${JWT_SECRET}
+      IS_OFFLINE: "true"
+    volumes:
+      - ./allure-results:/workspace/apps/backend/allure-results
+      - ./allure-report:/workspace/apps/backend/allure-report
+    command: ["pnpm", "run", "test:unit"]
+    profiles:
+      - unit
+
+  # Test runner for integration/e2e tests (requires database)
   test-runner:
     container_name: school_test_runner
     build:

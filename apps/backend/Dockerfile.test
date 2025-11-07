@@ -22,18 +22,12 @@ COPY apps/backend ./apps/backend
 
 WORKDIR /workspace/apps/backend
 
-# Create directories for test results
-RUN mkdir -p allure-results allure-report
+# Create directories for test results with wide permissions
+RUN mkdir -p allure-results allure-report && \
+    chmod -R 777 allure-results allure-report
 
-# Create non-root user
-RUN addgroup -g 1001 -S nodejs && \
-    adduser -S nestjs -u 1001
-
-# Change ownership
-RUN chown -R nestjs:nodejs /workspace
-
-# Switch to non-root user
-USER nestjs
+# Note: Running as root in test container for simplicity
+# In production, use non-root user
 
 # Default command (can be overridden)
 CMD ["pnpm", "run", "test:parallel"]
