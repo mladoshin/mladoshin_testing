@@ -209,3 +209,88 @@ chmod -R 777 allure-results allure-report logs
 ### Security Note
 
 This is **only** for the test environment (`Dockerfile.test`). The production Dockerfile (`Dockerfile`) still uses a non-root user for security best practices.
+
+---
+
+## Fix #3: Environment Variables Not Loaded in GitHub Actions
+
+### Problem
+
+Integration and E2E test stages were failing with:
+```
+level=warning msg="The \"POSTGRES_USER\" variable is not set. Defaulting to a blank string."
+dependency failed to start: container school_postgres_test is unhealthy
+```
+
+**Root Cause**: GitHub Actions doesn't automatically load `.env.docker.test` file. Docker Compose needs environment variables to be set in the runner's environment or passed explicitly.
+
+### Solution
+
+Set environment variables directly in the GitHub Actions workflow using the `env` key at the job level.
+
+### Changes Made
+
+#### Updated `.github/workflows/test.yml`
+
+Added `env` block to `integration-tests` and `e2e-tests` jobs:
+
+```yaml
+integration-tests:
+  name: Integration Tests
+  runs-on: ubuntu-latest
+  needs: unit-tests
+  env:
+    POSTGRES_USER: test_user
+    POSTGRES_PASSWORD: test_password
+    POSTGRES_DB: school_test_db
+    POSTGRES_PORT: 5432
+    POSTGRES_HOST: postgres-test
+    JWT_SECRET: test_secret_shbqchbc
+    LOG_FILE: app.log
+    LOG_ACCESS_FILE: access.log
+    LOG_ERROR_FILE: error.log
+    COURSE_COMMISION: "1.20"
+    IS_OFFLINE: "false"
+```
+
+### Why This Happens
+
+1. **Local development**: Docker Compose reads `.env` files automatically
+2. **GitHub Actions**: No default `.env` file loading - must explicitly set variables
+3. **env_file in docker-compose.yml**: Only works if the file exists and is in the right location relative to where docker compose runs
+
+### Alternative Solutions Considered
+
+1. **Copy .env.docker.test to .env** ❌
+   - Fragile, depends on file location
+   - Easy to forget in different contexts
+
+2. **Use GitHub Secrets** ❌
+   - Overkill for test credentials
+   - Makes local testing harder to match CI
+
+3. **Set env vars in workflow (chosen)** ✅
+   - Explicit and clear
+   - Works consistently
+   - Easy to modify per environment
+   - No file dependencies
+
+### Verification
+
+After this fix, the workflow should show:
+```
+✅ Unit Tests - PASSED
+✅ Integration Tests - PASSED (with healthy postgres)
+✅ E2E Tests - PASSED
+✅ Generate Report - PASSED
+```
+
+### Local Testing Still Works
+
+Local development unchanged - still uses `.env.docker.test`:
+```bash
+# Works locally
+docker compose -f docker-compose.test.yml run --rm test-runner pnpm run test:integration
+```
+
+The `env_file` directive in `docker-compose.test.yml` ensures local `.env.docker.test` is loaded.

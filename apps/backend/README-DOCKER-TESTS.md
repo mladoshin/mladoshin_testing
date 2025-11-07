@@ -110,7 +110,8 @@ Root:
 
 1. **PostgreSQL Dependency Issue**: Created separate `test-runner-unit` service without database dependency
 2. **Permission Issues**: Run test container as root, added permission fix script
-3. **Monorepo Support**: Updated Dockerfiles to work with pnpm workspace
+3. **Environment Variables in CI**: Set env vars explicitly in GitHub Actions workflow
+4. **Monorepo Support**: Updated Dockerfiles to work with pnpm workspace
 
 ## Next Steps
 

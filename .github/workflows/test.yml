@@ -78,6 +78,18 @@ jobs:
     defaults:
       run:
         working-directory: apps/backend
+    env:
+      POSTGRES_USER: test_user
+      POSTGRES_PASSWORD: test_password
+      POSTGRES_DB: school_test_db
+      POSTGRES_PORT: 5432
+      POSTGRES_HOST: postgres-test
+      JWT_SECRET: test_secret_shbqchbc
+      LOG_FILE: app.log
+      LOG_ACCESS_FILE: access.log
+      LOG_ERROR_FILE: error.log
+      COURSE_COMMISION: "1.20"
+      IS_OFFLINE: "false"
 
     steps:
       - name: Checkout repository
@@ -85,9 +97,6 @@ jobs:
 
       - name: Set up Docker Buildx
         uses: docker/setup-buildx-action@v3
-
-      - name: Create test environment file
-        run: cp .env.docker.test .env.docker.test.local
 
       - name: Prepare test directories
         run: |
@@ -102,8 +111,7 @@ jobs:
 
       - name: Wait for PostgreSQL
         run: |
-          docker compose -f docker-compose.test.yml run --rm --entrypoint sh test-runner \
-            -c "until nc -z postgres-test 5432; do echo 'Waiting for PostgreSQL...'; sleep 2; done"
+          timeout 60 bash -c 'until docker compose -f docker-compose.test.yml exec -T postgres-test pg_isready -U $POSTGRES_USER -d $POSTGRES_DB; do echo "Waiting for PostgreSQL..."; sleep 2; done'
 
       - name: Run integration tests
         id: integration_tests
@@ -138,6 +146,18 @@ jobs:
     defaults:
       run:
         working-directory: apps/backend
+    env:
+      POSTGRES_USER: test_user
+      POSTGRES_PASSWORD: test_password
+      POSTGRES_DB: school_test_db
+      POSTGRES_PORT: 5432
+      POSTGRES_HOST: postgres-test
+      JWT_SECRET: test_secret_shbqchbc
+      LOG_FILE: app.log
+      LOG_ACCESS_FILE: access.log
+      LOG_ERROR_FILE: error.log
+      COURSE_COMMISION: "1.20"
+      IS_OFFLINE: "false"
 
     steps:
       - name: Checkout repository
@@ -145,9 +165,6 @@ jobs:
 
       - name: Set up Docker Buildx
         uses: docker/setup-buildx-action@v3
-
-      - name: Create test environment file
-        run: cp .env.docker.test .env.docker.test.local
 
       - name: Prepare test directories
         run: |
