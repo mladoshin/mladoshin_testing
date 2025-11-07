@@ -21,6 +21,9 @@
     "test:parallel:random": "jest --maxWorkers=4 --config jest.config.random.ts",
     "test:sequential:random": "jest --runInBand --config jest.config.random.ts",
 
+    "test:unit": "jest --testPathPattern=tests/unit --maxWorkers=4",
+    "test:integration": "jest --testPathPattern=tests/integration --maxWorkers=4",
+    "test:e2e": "jest --config ./tests/e2e/jest-e2e.json",
 
     "test": "npm run allure:prepare && jest && npm run allure:append && npm run allure:show",
     "allure:clean": "rm -rf allure-results allure-report && mkdir -p allure-results allure-report",
@@ -31,7 +34,6 @@
     "test:watch": "jest --watch",
     "test:cov": "jest --coverage",
     "test:debug": "node --inspect-brk -r tsconfig-paths/register -r ts-node/register node_modules/.bin/jest --runInBand",
-    "test:e2e": "jest --config ./tests/e2e/jest-e2e.json",
     "console": "tsx --tsconfig tsconfig.json src/main.console.ts"
   },
   "dependencies": {

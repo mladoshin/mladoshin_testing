@@ -144,18 +144,96 @@ npm run test:parallel
 
 ## CI/CD Integration
 
-For continuous integration:
+### GitHub Actions Workflow
+
+The repository includes a complete GitHub Actions workflow (`.github/workflows/test.yml`) that:
+
+1. **Runs tests in stages**: unit → integration → e2e
+2. **Stops on failure**: If any stage fails, subsequent stages are skipped
+3. **Generates Allure reports**: Even when tests fail, a report is generated with skipped stages marked
+4. **Deploys to GitHub Pages**: Test reports are published automatically
+
+#### Test Execution Order
+
+```
+Unit Tests (parallel)
+    ↓ (pass)
+Integration Tests (with PostgreSQL)
+    ↓ (pass)
+E2E Tests (full stack)
+    ↓ (always)
+Generate Allure Report
+```
+
+If a stage fails:
+- Subsequent stages are **skipped** (not run)
+- Allure report shows skipped stages with explanation
+- Workflow fails with clear indication of which stage failed
+
+#### Running Specific Test Stages Locally
 
 ```bash
-# Run tests and capture exit code
-docker compose -f docker-compose.test.yml run --rm test-runner pnpm run test:parallel
-EXIT_CODE=$?
+# Unit tests only (no database required)
+docker compose -f docker-compose.test.yml run --rm test-runner pnpm run test:unit
 
-# Cleanup
+# Integration tests (requires PostgreSQL)
+docker compose -f docker-compose.test.yml up -d postgres-test
+docker compose -f docker-compose.test.yml run --rm test-runner pnpm run test:integration
+
+# E2E tests (requires full stack)
+docker compose -f docker-compose.test.yml up -d postgres-test backend-test
+docker compose -f docker-compose.test.yml run --rm test-runner pnpm run test:e2e
+```
+
+### Manual CI/CD Simulation
+
+To simulate the CI/CD pipeline locally:
+
+```bash
+#!/bin/bash
+set -e
+
+echo "Running Unit Tests..."
+docker compose -f docker-compose.test.yml run --rm test-runner pnpm run test:unit || {
+  echo "Unit tests failed. Stopping pipeline."
+  ./scripts/create-skipped-tests.sh integration
+  ./scripts/create-skipped-tests.sh e2e
+  exit 1
+}
+
+echo "Running Integration Tests..."
+docker compose -f docker-compose.test.yml up -d postgres-test
+docker compose -f docker-compose.test.yml run --rm test-runner pnpm run test:integration || {
+  echo "Integration tests failed. Stopping pipeline."
+  ./scripts/create-skipped-tests.sh e2e
+  docker compose -f docker-compose.test.yml down -v
+  exit 1
+}
+
+echo "Running E2E Tests..."
+docker compose -f docker-compose.test.yml up -d backend-test
+docker compose -f docker-compose.test.yml run --rm test-runner pnpm run test:e2e || {
+  echo "E2E tests failed."
+  docker compose -f docker-compose.test.yml down -v
+  exit 1
+}
+
+echo "All tests passed!"
 docker compose -f docker-compose.test.yml down -v
 
-exit $EXIT_CODE
+# Generate report
+pnpm run allure:append
+pnpm run allure:show
 ```
+
+### Viewing CI/CD Results
+
+After a workflow run:
+1. Go to **Actions** tab in GitHub
+2. Click on the workflow run
+3. View **Summary** for test stage results
+4. Download **allure-report** artifact
+5. If on `main` branch, view live report at: `https://<username>.github.io/<repo>/`
 
 ## Port Mappings
 
