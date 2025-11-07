@@ -33,6 +33,7 @@ This document provides a quick overview of the Docker-based testing infrastructu
 - **`QUICKSTART.md`** - Quick start guide
 - **`DOCKER.md`** - Detailed Docker documentation
 - **`CI-CD.md`** - CI/CD pipeline documentation
+- **`ALLURE-REPORTS.md`** - Complete guide to viewing test reports
 - **`FIXES.md`** - Solutions to common issues
 
 ## Quick Start
@@ -111,14 +112,17 @@ Root:
 1. **PostgreSQL Dependency Issue**: Created separate `test-runner-unit` service without database dependency
 2. **Permission Issues**: Run test container as root, added permission fix script
 3. **Environment Variables in CI**: Set env vars explicitly in GitHub Actions workflow
-4. **Monorepo Support**: Updated Dockerfiles to work with pnpm workspace
+4. **Artifact Upload & GitHub Pages**: Fixed report collection and deployment
+5. **Monorepo Support**: Updated Dockerfiles to work with pnpm workspace
 
 ## Next Steps
 
-1. Push to GitHub to trigger CI/CD pipeline
-2. Check GitHub Actions tab for test results
-3. Enable GitHub Pages for Allure report publishing
-4. Review generated reports for test insights
+1. **Push to GitHub** to trigger CI/CD pipeline
+2. **Check GitHub Actions** tab for test results
+3. **View Reports**:
+   - Download `allure-report` artifact from Actions
+   - Or enable GitHub Pages (see [ALLURE-REPORTS.md](./ALLURE-REPORTS.md))
+4. **Review Reports** for test insights and trends
 
 ## Support
 

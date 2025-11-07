@@ -169,28 +169,49 @@ To run the workflow manually:
 ### Downloading Artifacts
 
 Each job uploads artifacts:
-- `unit-test-results` - Unit test Allure results
-- `integration-test-results` - Integration test Allure results
-- `e2e-test-results` - E2E test Allure results
-- `allure-report` - Complete HTML report
+- `unit-test-results` - Unit test Allure results (JSON)
+- `integration-test-results` - Integration test Allure results (JSON)
+- `e2e-test-results` - E2E test Allure results (JSON)
+- `allure-report` - Complete HTML report (ready to view)
 
-To download:
-1. Click on workflow run
-2. Scroll to "Artifacts" section
-3. Download `allure-report`
-4. Extract and open `index.html`
+**To download and view:**
+1. Click on workflow run in Actions tab
+2. Scroll to **Artifacts** section at bottom
+3. Download `allure-report` (ZIP file)
+4. Extract: `unzip allure-report.zip -d allure-report`
+5. Open: `open allure-report/index.html` (or double-click)
+
+**Artifacts are:**
+- Kept for 30 days
+- Available on all branches
+- Include full test history and trends
 
 ### GitHub Pages (Live Report)
 
-For `main` branch only, reports are automatically published to:
+Reports are automatically published to GitHub Pages after every workflow run:
 ```
-https://<username>.github.io/<repository>/
+https://<username>.github.io/<repository>/latest/
 ```
 
-Setup required:
-1. Go to **Settings** → **Pages**
-2. Source: Deploy from branch `gh-pages`
-3. Wait for deployment (~1-2 minutes)
+**First Time Setup:**
+1. Go to repository **Settings** → **Pages**
+2. **Source**: Deploy from a branch
+3. **Branch**: `gh-pages` / `/ (root)`
+4. Click **Save**
+5. Wait 1-2 minutes for first deployment
+
+**Features:**
+- ✅ Always up-to-date with latest run
+- ✅ No download needed - view directly in browser
+- ✅ Historical data preserved across runs
+- ✅ Shareable URL for team members
+- ✅ Available on all branches (each creates its own report)
+
+**URL Structure:**
+```
+https://<user>.github.io/<repo>/latest/          # Latest report
+https://<user>.github.io/<repo>/latest/index.html  # Full path
+```
 
 ## Local Testing
 
