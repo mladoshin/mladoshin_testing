@@ -1,0 +1,50 @@
+# Node modules - will be installed during build
+**/node_modules
+**/npm-debug.log
+
+# Build output
+**/dist
+**/build
+
+# Test results and coverage
+**/allure-results
+**/allure-report
+**/coverage
+
+# Environment files (we copy specific ones)
+**/.env
+**/.env.local
+**/.env.*.local
+!**/.env.docker.test
+
+# Git
+.git
+.gitignore
+**/.gitignore
+
+# IDE
+.idea
+.vscode
+**/*.swp
+**/*.swo
+**/*~
+
+# OS
+.DS_Store
+**/Thumbs.db
+
+# Logs
+**/logs
+**/*.log
+
+# Documentation (optional, uncomment if you want smaller images)
+# **/*.md
+# !**/DOCKER.md
+
+# Test files for production builds (keep for test builds)
+# **/*.spec.ts
+# **/*.test.ts
+
+# Docker files
+**/docker-compose*.yml
+**/Dockerfile*

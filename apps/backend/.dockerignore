@@ -1,0 +1,46 @@
+# Node modules
+node_modules
+npm-debug.log
+
+# Build output
+dist
+build
+
+# Test results
+allure-results
+allure-report
+coverage
+
+# Environment files (we copy specific ones)
+.env
+.env.local
+.env.*.local
+
+# Git
+.git
+.gitignore
+
+# IDE
+.idea
+.vscode
+*.swp
+*.swo
+*~
+
+# OS
+.DS_Store
+Thumbs.db
+
+# Logs
+logs
+*.log
+
+# Documentation
+*.md
+!DOCKER.md
+
+# Test files (for production build)
+tests
+*.spec.ts
+*.test.ts
+jest.config*.ts
