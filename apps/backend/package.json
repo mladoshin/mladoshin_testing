@@ -23,7 +23,7 @@
 
     "test:unit": "jest --testPathPattern=tests/unit --maxWorkers=4",
     "test:integration": "jest --testPathPattern=tests/integration --maxWorkers=4",
-    "test:e2e": "jest --config ./tests/e2e/jest-e2e.json",
+    "test:e2e": "jest --config ./tests/e2e/jest-e2e.config.ts",
 
     "test": "npm run allure:prepare && jest && npm run allure:append && npm run allure:show",
     "allure:clean": "rm -rf allure-results allure-report && mkdir -p allure-results allure-report",
