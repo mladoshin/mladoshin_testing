@@ -305,7 +305,7 @@ jobs:
           fi
 
       - name: Generate Allure Report
-        uses: simple-elf/allure-report-action@v2.1
+        uses: simple-elf/allure-report-action@master
         if: always()
         id: allure-report
         with:
@@ -314,7 +314,6 @@ jobs:
           gh_pages: gh-pages
           allure_history: allure-history
           keep_reports: 20
-          subfolder: latest
 
       - name: Upload Allure report artifact
         uses: actions/upload-artifact@v4
