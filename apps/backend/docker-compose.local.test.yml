@@ -57,7 +57,7 @@ services:
         condition: service_healthy
     volumes:
       - ./logs:/workspace/apps/backend/logs
-    command: sh -c "pnpm migration:run && pnpm seed:run && (pnpm pg:update-function || echo 'Skipping pg:update-function') && node dist/src/main"
+    command: sh -c "./scripts/init-db.sh && node dist/src/main"
     healthcheck:
       test: ["CMD-SHELL", "curl -f http://localhost:3000/api/auth/check?email=healthcheck@test.com || exit 1"]
       interval: 10s
