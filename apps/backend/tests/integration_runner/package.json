@@ -1,0 +1,33 @@
+{
+  "name": "integration-test-runner",
+  "version": "1.0.0",
+  "description": "Integration test runner for backend HTTP API tests",
+  "private": true,
+  "scripts": {
+    "test": "npm run allure:prepare && jest --testPathPattern='integration' && npm run allure:append",
+    "test:integration": "jest --testPathPattern='integration' --runInBand",
+    "test:integration:parallel": "jest --testPathPattern='integration' --maxWorkers=2",
+    "test:verbose": "jest --testPathPattern='integration' --verbose --runInBand",
+    "test:watch": "jest --testPathPattern='integration' --watch",
+    "test:debug": "node --inspect-brk -r tsconfig-paths/register -r ts-node/register node_modules/.bin/jest --runInBand",
+    "allure:clean": "rm -rf allure-results allure-report && mkdir -p allure-results allure-report",
+    "allure:prepare": "rm -rf allure-results/history && cp -r allure-report/history allure-results/history 2>/dev/null || true",
+    "allure:append": "allure generate allure-results -o allure-report --clean",
+    "allure:show": "allure open allure-report"
+  },
+  "dependencies": {
+    "axios": "^1.7.0",
+    "uuid": "^8.3.2"
+  },
+  "devDependencies": {
+    "@types/jest": "^29.5.14",
+    "@types/node": "^22.10.7",
+    "@types/uuid": "^8.3.4",
+    "allure-jest": "^3.4.1",
+    "jest": "^29.7.0",
+    "ts-jest": "^29.3.1",
+    "ts-node": "^10.9.2",
+    "tsconfig-paths": "^4.2.0",
+    "typescript": "^5.8.3"
+  }
+}

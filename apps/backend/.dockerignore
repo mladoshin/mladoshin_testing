@@ -40,7 +40,30 @@ logs
 !DOCKER.md
 
 # Test files (for production build)
-tests
+# Only ignore root-level tests directory (not src/**/tests)
+/tests
+# Allow integration_runner, e2e_runner and helpers for test runner builds
+!/tests/integration_runner
+!/tests/e2e_runner
+!/tests/helpers
+# Ignore spec files except integration and e2e tests
 *.spec.ts
 *.test.ts
+# Allow integration test files in src (must come after *.spec.ts)
+!src/**/tests/integration/*.spec.ts
+!src/**/tests/**/integration/*.spec.ts
+# Allow e2e test files in src (must come after *.spec.ts)
+!src/**/tests/e2e/*.spec.ts
+!src/**/tests/**/e2e/*.spec.ts
+# Ignore jest configs except integration_runner and e2e_runner
 jest.config*.ts
+# Allow integration_runner configs
+!/tests/integration_runner/jest.config.ts
+!/tests/integration_runner/tsconfig.json
+!/tests/integration_runner/package.json
+!/tests/integration_runner/package-lock.json
+# Allow e2e_runner configs
+!/tests/e2e_runner/jest.config.ts
+!/tests/e2e_runner/tsconfig.json
+!/tests/e2e_runner/package.json
+!/tests/e2e_runner/package-lock.json

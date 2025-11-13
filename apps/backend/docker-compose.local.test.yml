@@ -1,0 +1,121 @@
+name: online_school_local_test
+
+services:
+  # PostgreSQL Database for testing
+  postgres-test:
+    container_name: school_postgres_local_test
+    build:
+      context: .
+      dockerfile: ./docker/Dockerfile.postgres
+    restart: always
+    env_file:
+      - .env.docker.test
+    environment:
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD}
+      POSTGRES_USER: ${POSTGRES_USER}
+      POSTGRES_DB: ${POSTGRES_DB}
+      PG_DATA: /var/lib/postgresql/data
+    ports:
+      - "5435:5432"
+    volumes:
+      - pgdata-local-test:/var/lib/postgresql/data
+      - ./src/modules/user-schedule/pg-function/function.sql:/function.sql
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U ${POSTGRES_USER} -d ${POSTGRES_DB}"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+    networks:
+      - test-network
+
+  # Backend application for testing
+  backend-test:
+    container_name: school_backend_local_test
+    build:
+      context: ../..
+      dockerfile: apps/backend/Dockerfile
+    restart: always
+    env_file:
+      - .env.docker.test
+    environment:
+      NODE_ENV: test
+      POSTGRES_HOST: postgres-test
+      POSTGRES_PORT: 5432
+      POSTGRES_USER: ${POSTGRES_USER}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD}
+      POSTGRES_DB: ${POSTGRES_DB}
+      JWT_SECRET: ${JWT_SECRET}
+      PORT: 3000
+      LOG_FILE: ${LOG_FILE}
+      LOG_ACCESS_FILE: ${LOG_ACCESS_FILE}
+      LOG_ERROR_FILE: ${LOG_ERROR_FILE}
+      COURSE_COMMISION: ${COURSE_COMMISION}
+    ports:
+      - "3000:3000"
+    depends_on:
+      postgres-test:
+        condition: service_healthy
+    volumes:
+      - ./logs:/workspace/apps/backend/logs
+    command: sh -c "pnpm migration:run && pnpm seed:run && (pnpm pg:update-function || echo 'Skipping pg:update-function') && node dist/src/main"
+    healthcheck:
+      test: ["CMD-SHELL", "curl -f http://localhost:3000/api/auth/check?email=healthcheck@test.com || exit 1"]
+      interval: 10s
+      timeout: 5s
+      retries: 10
+      start_period: 30s
+    networks:
+      - test-network
+
+  # Integration test runner
+  integration-runner:
+    container_name: school_integration_runner
+    build:
+      context: .
+      dockerfile: tests/integration_runner/Dockerfile
+    env_file:
+      - .env.docker.test
+    environment:
+      NODE_ENV: test
+      TEST_API_URL: http://backend-test:3000
+      JWT_SECRET: ${JWT_SECRET}
+      IS_OFFLINE: "false"
+      JEST_TIMEOUT: 30000
+    depends_on:
+      backend-test:
+        condition: service_healthy
+    volumes:
+      - ./allure-results:/app/allure-results
+      - ./allure-report:/app/allure-report
+    networks:
+      - test-network
+
+  # E2E test runner
+  e2e-runner:
+    container_name: school_e2e_runner
+    build:
+      context: .
+      dockerfile: tests/e2e_runner/Dockerfile
+    env_file:
+      - .env.docker.test
+    environment:
+      NODE_ENV: test
+      TEST_API_URL: http://backend-test:3000
+      JWT_SECRET: ${JWT_SECRET}
+      IS_OFFLINE: "false"
+      JEST_TIMEOUT: 60000
+    depends_on:
+      backend-test:
+        condition: service_healthy
+    volumes:
+      - ./allure-results-e2e:/app/allure-results
+      - ./allure-report-e2e:/app/allure-report
+    networks:
+      - test-network
+
+networks:
+  test-network:
+    driver: bridge
+
+volumes:
+  pgdata-local-test:

@@ -1,4 +1,4 @@
-import { Module } from '@nestjs/common';
+import { Module, MiddlewareConsumer, NestModule } from '@nestjs/common';
 import { AppController } from './app.controller';
 import { AppService } from './app.service';
 import { AuthModule } from './modules/auth/auth.module';
@@ -14,6 +14,12 @@ import { ErrorLoggerInterceptor } from './common/logging/error-logger.intercepto
 import { AppLoggerModule } from './common/logging/log.module';
 import { UserAvailabilityModule } from './modules/user-availability/user-availability.module';
 import { UserScheduleModule } from './modules/user-schedule/user-schedule.module';
+import { TestUtilsModule } from './modules/test-utils/test-utils.module';
+import { TestSchemaMiddleware } from './common/middleware/test-schema.middleware';
+import { dataSourceOptions } from './database/data-source';
+
+// Dynamically import TestUtilsModule only in test environment
+const testModules = process.env.NODE_ENV === 'test' ? [TestUtilsModule] : [];
 
 @Module({
   imports: [
@@ -29,7 +35,12 @@ import { UserScheduleModule } from './modules/user-schedule/user-schedule.module
         database: configService.getOrThrow('POSTGRES_DB'),
         autoLoadEntities: true,
         entities: [__dirname + '/**/*.entity{.ts,.js}'],
-        synchronize: true, // Set to false in production
+        // Only synchronize in development, use migrations in test/production
+        synchronize: process.env.NODE_ENV === 'development',
+        // Load migrations from data-source
+        migrations: dataSourceOptions.migrations,
+        // Enable logging in development
+        logging: process.env.NODE_ENV === 'development' ? ['error', 'warn'] : false,
       }),
     }),
     AuthModule,
@@ -40,8 +51,16 @@ import { UserScheduleModule } from './modules/user-schedule/user-schedule.module
     UserAvailabilityModule,
     UserScheduleModule,
     AppLoggerModule,
+    ...testModules,
   ],
   controllers: [AppController],
   providers: [AppService, BcryptService, TokenService, ErrorLoggerInterceptor],
 })
-export class AppModule {}
+export class AppModule implements NestModule {
+  configure(consumer: MiddlewareConsumer) {
+    // Apply schema middleware only in test environment
+    if (process.env.NODE_ENV === 'test') {
+      consumer.apply(TestSchemaMiddleware).forRoutes('*');
+    }
+  }
+}

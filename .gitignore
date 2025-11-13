@@ -2,6 +2,7 @@
 **/node_modules
 **/allure-report/
 **/allure-results/
+**/allure-results-e2e/
 **/coverage/
 **/dist/
 **/logs/
