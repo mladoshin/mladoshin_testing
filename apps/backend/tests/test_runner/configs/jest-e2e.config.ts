@@ -5,12 +5,13 @@ const config: Config = {
   preset: 'ts-jest',
   testEnvironment: 'allure-jest/node',
 
-  // Root directory for tests
-  rootDir: '.',
+  // Root directory for tests (parent of configs directory)
+  rootDir: '..',
 
-  // Module path aliases
+  // Module path aliases (must match tsconfig.json paths)
   moduleNameMapper: {
     '^src/(.*)$': '<rootDir>/src/$1',
+    '^@modules/(.*)$': '<rootDir>/src/modules/$1',
     '^tests/(.*)$': '<rootDir>/tests/$1',
   },
 
@@ -21,12 +22,32 @@ const config: Config = {
   moduleFileExtensions: ['ts', 'js', 'json'],
 
   // Test pattern - only .spec.ts files in e2e folders
-  // This matches end-to-end tests that verify complete system behavior
-  testRegex: '/e2e/.*\\.spec\\.ts$',
+  // This matches end-to-end tests in src/modules/**/tests/e2e/*.spec.ts
+  testRegex: 'src/modules/.*/tests/e2e/.*\\.spec\\.ts$',
 
   // Transform TypeScript files
   transform: {
-    '^.+\\.(t|j)s$': 'ts-jest',
+    '^.+\\.(t|j)s$': ['ts-jest', {
+      tsconfig: {
+        module: 'commonjs',
+        target: 'ES2023',
+        esModuleInterop: true,
+        allowSyntheticDefaultImports: true,
+        experimentalDecorators: true,
+        emitDecoratorMetadata: true,
+        skipLibCheck: true,
+        strictNullChecks: true,
+        resolveJsonModule: true,
+        forceConsistentCasingInFileNames: true,
+        noImplicitAny: false,
+        baseUrl: '.',
+        paths: {
+          'src/*': ['src/*'],
+          '@modules/*': ['src/modules/*'],
+        },
+        types: ['jest', 'node'],
+      },
+    }],
   },
 
   // Coverage settings (disabled for e2e tests by default)

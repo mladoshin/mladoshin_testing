@@ -3,7 +3,7 @@ name: online_school_local_test
 services:
   # PostgreSQL Database for testing
   postgres-test:
-    container_name: school_postgres_local_test
+    container_name: postgres_test
     build:
       context: .
       dockerfile: ./docker/Dockerfile.postgres
@@ -11,9 +11,9 @@ services:
     env_file:
       - .env.docker.test
     environment:
-      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD}
-      POSTGRES_USER: ${POSTGRES_USER}
-      POSTGRES_DB: ${POSTGRES_DB}
+      POSTGRES_PASSWORD: test_password
+      POSTGRES_USER: test_user
+      POSTGRES_DB: school_test_db
       PG_DATA: /var/lib/postgresql/data
     ports:
       - "5435:5432"
@@ -21,7 +21,7 @@ services:
       - pgdata-local-test:/var/lib/postgresql/data
       - ./src/modules/user-schedule/pg-function/function.sql:/function.sql
     healthcheck:
-      test: ["CMD-SHELL", "pg_isready -U ${POSTGRES_USER} -d ${POSTGRES_DB}"]
+      test: ["CMD-SHELL", "pg_isready -U test_user -d school_test_db"]
       interval: 10s
       timeout: 5s
       retries: 5
@@ -30,7 +30,7 @@ services:
 
   # Backend application for testing
   backend-test:
-    container_name: school_backend_local_test
+    container_name: backend_test
     build:
       context: ../..
       dockerfile: apps/backend/Dockerfile
@@ -41,15 +41,15 @@ services:
       NODE_ENV: test
       POSTGRES_HOST: postgres-test
       POSTGRES_PORT: 5432
-      POSTGRES_USER: ${POSTGRES_USER}
-      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD}
-      POSTGRES_DB: ${POSTGRES_DB}
-      JWT_SECRET: ${JWT_SECRET}
+      POSTGRES_USER: test_user
+      POSTGRES_PASSWORD: test_password
+      POSTGRES_DB: school_test_db
+      JWT_SECRET: test_secret_shbqchbc
       PORT: 3000
-      LOG_FILE: ${LOG_FILE}
-      LOG_ACCESS_FILE: ${LOG_ACCESS_FILE}
-      LOG_ERROR_FILE: ${LOG_ERROR_FILE}
-      COURSE_COMMISION: ${COURSE_COMMISION}
+      LOG_FILE: app.log
+      LOG_ACCESS_FILE: access.log
+      LOG_ERROR_FILE: error.log
+      COURSE_COMMISION: 1.20
     ports:
       - "3000:3000"
     depends_on:
@@ -67,51 +67,39 @@ services:
     networks:
       - test-network
 
-  # Integration test runner
-  integration-runner:
-    container_name: school_integration_runner
+  # Test runner - can run unit, integration, and e2e tests
+  test-runner:
+    container_name: test_runner
     build:
-      context: .
-      dockerfile: tests/integration_runner/Dockerfile
+      context: ../..
+      dockerfile: apps/backend/tests/test_runner/Dockerfile
     env_file:
       - .env.docker.test
     environment:
       NODE_ENV: test
       TEST_API_URL: http://backend-test:3000
-      JWT_SECRET: ${JWT_SECRET}
-      IS_OFFLINE: "false"
-      JEST_TIMEOUT: 30000
-    depends_on:
-      backend-test:
-        condition: service_healthy
-    volumes:
-      - ./allure-results:/app/allure-results
-      - ./allure-report:/app/allure-report
-    networks:
-      - test-network
-
-  # E2E test runner
-  e2e-runner:
-    container_name: school_e2e_runner
-    build:
-      context: .
-      dockerfile: tests/e2e_runner/Dockerfile
-    env_file:
-      - .env.docker.test
-    environment:
-      NODE_ENV: test
-      TEST_API_URL: http://backend-test:3000
-      JWT_SECRET: ${JWT_SECRET}
+      JWT_SECRET: test_secret_shbqchbc
       IS_OFFLINE: "false"
       JEST_TIMEOUT: 60000
+      POSTGRES_HOST: postgres-test
+      POSTGRES_PORT: 5432
+      POSTGRES_USER: test_user
+      POSTGRES_PASSWORD: test_password
+      POSTGRES_DB: school_test_db
     depends_on:
       backend-test:
         condition: service_healthy
     volumes:
-      - ./allure-results-e2e:/app/allure-results
-      - ./allure-report-e2e:/app/allure-report
+      - ./allure-results:/workspace/apps/backend/allure-results
+      - ./allure-report:/workspace/apps/backend/allure-report
     networks:
       - test-network
+    # Use profiles to control which tests to run
+    # Run specific test types:
+    # - Unit tests: docker compose --profile unit up
+    # - Integration tests: docker compose --profile integration up
+    # - E2E tests: docker compose --profile e2e up
+    # Or run manually: docker compose exec test-runner pnpm run test:unit
 
 networks:
   test-network:

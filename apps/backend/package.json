@@ -26,9 +26,9 @@
     "test:parallel:random": "jest --maxWorkers=4 --config jest.config.random.ts",
     "test:sequential:random": "jest --runInBand --config jest.config.random.ts",
 
-    "test:unit": "jest --testPathPattern=tests/unit --maxWorkers=4",
-    "test:integration": "jest --testPathPattern=tests/integration --maxWorkers=4",
-    "test:e2e": "jest --config ./tests/e2e/jest-e2e.config.ts",
+    "test:unit": "jest --config=./configs/jest-unit.config.ts",
+    "test:integration": "jest --config=./configs/jest-integration.config.ts",
+    "test:e2e": "jest --config=./configs/jest-e2e.config.ts",
 
     "docker:test": "docker-compose -f docker-compose.test.yml up --abort-on-container-exit",
     "docker:test:backend-only": "docker-compose -f docker-compose.test.yml up backend-test",
