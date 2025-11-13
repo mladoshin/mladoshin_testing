@@ -86,6 +86,8 @@ services:
       POSTGRES_USER: ${POSTGRES_USER:-test_user}
       POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:-test_password}
       POSTGRES_DB: ${POSTGRES_DB:-school_test_db}
+      # Increase Node.js memory limit to prevent worker crashes
+      NODE_OPTIONS: "--max-old-space-size=2048"
     depends_on:
       postgres-test:
         condition: service_healthy
@@ -94,6 +96,13 @@ services:
       - ./allure-report:/workspace/apps/backend/allure-report
     networks:
       - test-network
+    # Resource limits to ensure stable test execution
+    deploy:
+      resources:
+        limits:
+          memory: 2G
+        reservations:
+          memory: 1G
 
 networks:
   test-network:

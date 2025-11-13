@@ -56,11 +56,15 @@ const config: Config = {
   // Test timeout for integration tests
   testTimeout: parseInt(process.env.JEST_TIMEOUT || '30000', 10),
 
-  // Run tests with limited parallelism (may share database)
-  maxWorkers: 2,
+  // Run tests sequentially to avoid worker crashes and database conflicts
+  // Using maxWorkers: 1 instead of --runInBand for better stability in containers
+  maxWorkers: 1,
 
   // Verbose output
   verbose: true,
+
+  // Prevent worker crashes with limited retries
+  maxConcurrency: 1,
 
   // Setup files
   setupFilesAfterEnv: [],

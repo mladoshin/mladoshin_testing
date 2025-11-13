@@ -62,6 +62,9 @@ const config: Config = {
   // Verbose output
   verbose: true,
 
+  // Prevent worker crashes with limited concurrency
+  maxConcurrency: 1,
+
   // Setup files
   setupFilesAfterEnv: [],
 

@@ -56,8 +56,9 @@ const config: Config = {
   // Test timeout for unit tests (shorter than integration/e2e)
   testTimeout: parseInt(process.env.JEST_TIMEOUT || '10000', 10),
 
-  // Run tests in parallel (unit tests are independent)
-  maxWorkers: 4,
+  // Run tests with limited parallelism for container stability
+  // Reduced from 4 to 2 to prevent worker crashes in CI/CD
+  maxWorkers: 2,
 
   // Verbose output
   verbose: true,
