@@ -1,0 +1,360 @@
+name: Backend Tests CI/CD
+
+on:
+  push:
+    branches: [ main, develop, lab_02 ]
+    paths:
+      - 'apps/backend/**'
+      - 'packages/**'
+      - '.github/workflows/test.yml'
+  pull_request:
+    branches: [ main, develop ]
+    paths:
+      - 'apps/backend/**'
+      - 'packages/**'
+
+permissions:
+  contents: write
+  pages: write
+  id-token: write
+
+jobs:
+  unit-tests:
+    name: Unit Tests
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: apps/backend
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Set up Docker Buildx
+        uses: docker/setup-buildx-action@v3
+
+      - name: Create test environment file
+        run: cp .env.docker.test .env.docker.test.local
+
+      - name: Prepare test directories
+        run: |
+          mkdir -p allure-results allure-report logs
+          chmod -R 777 allure-results allure-report logs
+
+      - name: Build test runner image
+        run: |
+          cd ../..
+          docker compose -f apps/backend/docker-compose.test.yml build test-runner-unit
+
+      - name: Run unit tests
+        id: unit_tests
+        run: |
+          docker compose -f docker-compose.test.yml run --rm \
+            test-runner-unit
+        continue-on-error: true
+
+      - name: Upload unit test results
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: unit-test-results
+          path: apps/backend/allure-results/
+          if-no-files-found: warn
+          retention-days: 30
+
+      - name: Check unit tests status
+        if: steps.unit_tests.outcome == 'failure'
+        run: |
+          echo "Unit tests failed. Stopping pipeline."
+          exit 1
+
+  integration-tests:
+    name: Integration Tests
+    runs-on: ubuntu-latest
+    needs: unit-tests
+    defaults:
+      run:
+        working-directory: apps/backend
+    env:
+      POSTGRES_USER: test_user
+      POSTGRES_PASSWORD: test_password
+      POSTGRES_DB: school_test_db
+      POSTGRES_PORT: 5432
+      POSTGRES_HOST: postgres-test
+      JWT_SECRET: test_secret_shbqchbc
+      LOG_FILE: app.log
+      LOG_ACCESS_FILE: access.log
+      LOG_ERROR_FILE: error.log
+      COURSE_COMMISION: "1.20"
+      IS_OFFLINE: "false"
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Set up Docker Buildx
+        uses: docker/setup-buildx-action@v3
+
+      - name: Prepare test directories
+        run: |
+          mkdir -p allure-results allure-report logs
+          chmod -R 777 allure-results allure-report logs
+
+      - name: Build and start PostgreSQL
+        run: |
+          cd ../..
+          docker compose -f apps/backend/docker-compose.test.yml up -d postgres-test
+          docker compose -f apps/backend/docker-compose.test.yml build test-runner
+
+      - name: Wait for PostgreSQL
+        run: |
+          timeout 60 bash -c 'until docker compose -f docker-compose.test.yml exec -T postgres-test pg_isready -U $POSTGRES_USER -d $POSTGRES_DB; do echo "Waiting for PostgreSQL..."; sleep 2; done'
+
+      - name: Run integration tests
+        id: integration_tests
+        run: |
+          docker compose -f docker-compose.test.yml run --rm \
+            -e TEST_STAGE=integration \
+            test-runner pnpm run test:integration
+        continue-on-error: true
+
+      - name: Upload integration test results
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: integration-test-results
+          path: apps/backend/allure-results/
+          if-no-files-found: warn
+          retention-days: 30
+
+      - name: Cleanup
+        if: always()
+        run: docker compose -f docker-compose.test.yml down -v
+
+      - name: Check integration tests status
+        if: steps.integration_tests.outcome == 'failure'
+        run: |
+          echo "Integration tests failed. Stopping pipeline."
+          exit 1
+
+  e2e-tests:
+    name: E2E Tests
+    runs-on: ubuntu-latest
+    needs: integration-tests
+    defaults:
+      run:
+        working-directory: apps/backend
+    env:
+      POSTGRES_USER: test_user
+      POSTGRES_PASSWORD: test_password
+      POSTGRES_DB: school_test_db
+      POSTGRES_PORT: 5432
+      POSTGRES_HOST: postgres-test
+      JWT_SECRET: test_secret_shbqchbc
+      LOG_FILE: app.log
+      LOG_ACCESS_FILE: access.log
+      LOG_ERROR_FILE: error.log
+      COURSE_COMMISION: "1.20"
+      IS_OFFLINE: "false"
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Set up Docker Buildx
+        uses: docker/setup-buildx-action@v3
+
+      - name: Prepare test directories
+        run: |
+          mkdir -p allure-results allure-report logs
+          chmod -R 777 allure-results allure-report logs
+
+      - name: Build and start services
+        run: |
+          cd ../..
+          docker compose -f apps/backend/docker-compose.test.yml up -d postgres-test
+          docker compose -f apps/backend/docker-compose.test.yml build test-runner backend-test
+
+      - name: Wait for services
+        run: |
+          docker compose -f docker-compose.test.yml run --rm --entrypoint sh test-runner \
+            -c "until nc -z postgres-test 5432; do echo 'Waiting for PostgreSQL...'; sleep 2; done"
+
+      - name: Start backend
+        run: docker compose -f docker-compose.test.yml up -d backend-test
+
+      - name: Wait for backend to be ready
+        run: |
+          timeout 60 sh -c 'until docker compose -f docker-compose.test.yml exec backend-test curl -f http://localhost:3000/api > /dev/null 2>&1; do echo "Waiting for backend..."; sleep 2; done' || true
+
+      - name: Run E2E tests
+        id: e2e_tests
+        run: |
+          docker compose -f docker-compose.test.yml run --rm \
+            -e TEST_STAGE=e2e \
+            -e BACKEND_URL=http://backend-test:3000 \
+            test-runner pnpm run test:e2e
+        continue-on-error: true
+
+      - name: Upload E2E test results
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: e2e-test-results
+          path: apps/backend/allure-results/
+          if-no-files-found: warn
+          retention-days: 30
+
+      - name: Cleanup
+        if: always()
+        run: docker compose -f docker-compose.test.yml down -v
+
+      - name: Check E2E tests status
+        if: steps.e2e_tests.outcome == 'failure'
+        run: |
+          echo "E2E tests failed."
+          exit 1
+
+  generate-report:
+    name: Generate Allure Report
+    runs-on: ubuntu-latest
+    needs: [unit-tests, integration-tests, e2e-tests]
+    if: always()
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Download unit test results
+        uses: actions/download-artifact@v4
+        with:
+          name: unit-test-results
+          path: allure-results/unit
+        continue-on-error: true
+
+      - name: Download integration test results
+        uses: actions/download-artifact@v4
+        with:
+          name: integration-test-results
+          path: allure-results/integration
+        continue-on-error: true
+
+      - name: Download E2E test results
+        uses: actions/download-artifact@v4
+        with:
+          name: e2e-test-results
+          path: allure-results/e2e
+        continue-on-error: true
+
+      - name: Mark skipped stages
+        run: |
+          mkdir -p allure-results
+
+          # Check which stages ran
+          UNIT_STATUS="${{ needs.unit-tests.result }}"
+          INTEGRATION_STATUS="${{ needs.integration-tests.result }}"
+          E2E_STATUS="${{ needs.e2e-tests.result }}"
+
+          # Create metadata for skipped stages
+          if [ "$INTEGRATION_STATUS" == "skipped" ]; then
+            echo "Creating skipped marker for integration tests"
+            cat > allure-results/integration-skipped.json <<EOF
+          {
+            "name": "Integration Tests (Skipped - Unit tests failed)",
+            "status": "skipped",
+            "stage": "finished",
+            "description": "Integration tests were skipped because unit tests failed"
+          }
+          EOF
+          fi
+
+          if [ "$E2E_STATUS" == "skipped" ]; then
+            echo "Creating skipped marker for E2E tests"
+            cat > allure-results/e2e-skipped.json <<EOF
+          {
+            "name": "E2E Tests (Skipped - Previous stage failed)",
+            "status": "skipped",
+            "stage": "finished",
+            "description": "E2E tests were skipped because integration or unit tests failed"
+          }
+          EOF
+          fi
+
+      - name: Merge all results
+        run: |
+          mkdir -p allure-results-merged
+
+          # Copy all JSON files from downloaded artifacts
+          if [ -d "allure-results" ]; then
+            find allure-results -type f -name "*.json" -exec cp {} allure-results-merged/ \; 2>/dev/null || true
+          fi
+
+          # List what we have
+          echo "Merged results:"
+          ls -la allure-results-merged/ || echo "No results found"
+
+          # If no results, create a placeholder
+          if [ -z "$(ls -A allure-results-merged/ 2>/dev/null)" ]; then
+            echo "No test results found, creating placeholder"
+            cat > allure-results-merged/placeholder-result.json <<'EOF'
+          {
+            "uuid": "placeholder-uuid",
+            "name": "No Test Results Available",
+            "status": "unknown",
+            "stage": "finished",
+            "description": "Test results were not generated or uploaded",
+            "start": 0,
+            "stop": 0
+          }
+          EOF
+          fi
+
+      - name: Generate Allure Report
+        uses: simple-elf/allure-report-action@master
+        if: always()
+        id: allure-report
+        with:
+          allure_results: allure-results-merged
+          allure_report: allure-report
+          gh_pages: gh-pages
+          allure_history: allure-history
+          keep_reports: 20
+
+      - name: Upload Allure report artifact
+        uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: allure-report
+          path: allure-report/
+          if-no-files-found: warn
+          retention-days: 30
+
+      - name: Deploy report to GitHub Pages
+        if: always()
+        uses: peaceiris/actions-gh-pages@v4
+        with:
+          github_token: ${{ secrets.GITHUB_TOKEN }}
+          publish_branch: gh-pages
+          publish_dir: allure-report
+          keep_files: true
+          user_name: 'github-actions[bot]'
+          user_email: 'github-actions[bot]@users.noreply.github.com'
+
+      - name: Add report URL to summary
+        if: always()
+        run: |
+          echo "## Test Results" >> $GITHUB_STEP_SUMMARY
+          echo "" >> $GITHUB_STEP_SUMMARY
+          echo "### Test Stages Status" >> $GITHUB_STEP_SUMMARY
+          echo "- Unit Tests: **${{ needs.unit-tests.result }}**" >> $GITHUB_STEP_SUMMARY
+          echo "- Integration Tests: **${{ needs.integration-tests.result }}**" >> $GITHUB_STEP_SUMMARY
+          echo "- E2E Tests: **${{ needs.e2e-tests.result }}**" >> $GITHUB_STEP_SUMMARY
+          echo "" >> $GITHUB_STEP_SUMMARY
+          echo "### Reports" >> $GITHUB_STEP_SUMMARY
+          echo "- 📊 [Download Allure Report Artifact](https://github.com/${{ github.repository }}/actions/runs/${{ github.run_id }})" >> $GITHUB_STEP_SUMMARY
+
+          # Add GitHub Pages URL if on main branch
+          if [ "${{ github.ref }}" == "refs/heads/main" ]; then
+            REPO_NAME=$(echo "${{ github.repository }}" | cut -d'/' -f2)
+            echo "- 🌐 [View Live Report on GitHub Pages](https://${{ github.repository_owner }}.github.io/${REPO_NAME}/latest/)" >> $GITHUB_STEP_SUMMARY
+          fi

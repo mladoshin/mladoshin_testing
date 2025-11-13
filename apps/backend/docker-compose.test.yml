@@ -1,0 +1,98 @@
+name: online_school_test
+services:
+  postgres-test:
+    container_name: school_postgres_test
+    build:
+      context: .
+      dockerfile: ./docker/Dockerfile.postgres
+    restart: always
+    env_file:
+      - .env.docker.test
+    environment:
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD}
+      POSTGRES_USER: ${POSTGRES_USER}
+      POSTGRES_DB: ${POSTGRES_DB}
+      PG_DATA: /var/lib/postgresql/data
+    ports:
+      - "5435:5432"
+    volumes:
+      - pgdata-test:/var/lib/postgresql/data
+      - ./src/modules/user-schedule/pg-function/function.sql:/function.sql
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U ${POSTGRES_USER} -d ${POSTGRES_DB}"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
+  backend-test:
+    container_name: school_backend_test
+    build:
+      context: ../..
+      dockerfile: apps/backend/Dockerfile
+    restart: always
+    env_file:
+      - .env.docker.test
+    environment:
+      POSTGRES_HOST: postgres-test
+      POSTGRES_PORT: 5432
+      POSTGRES_USER: ${POSTGRES_USER}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD}
+      POSTGRES_DB: ${POSTGRES_DB}
+      JWT_SECRET: ${JWT_SECRET}
+      LOG_FILE: ${LOG_FILE}
+      LOG_ACCESS_FILE: ${LOG_ACCESS_FILE}
+      LOG_ERROR_FILE: ${LOG_ERROR_FILE}
+      COURSE_COMMISION: ${COURSE_COMMISION}
+    ports:
+      - "3000:3000"
+    depends_on:
+      postgres-test:
+        condition: service_healthy
+    volumes:
+      - ./logs:/workspace/apps/backend/logs
+    command: sh -c "pnpm run pg:update-function && node dist/main"
+
+  # Test runner for unit tests (no database required)
+  test-runner-unit:
+    container_name: school_test_runner_unit
+    build:
+      context: ../..
+      dockerfile: apps/backend/Dockerfile.test
+    env_file:
+      - .env.docker.test
+    environment:
+      JWT_SECRET: ${JWT_SECRET}
+      IS_OFFLINE: "true"
+    volumes:
+      - ./allure-results:/workspace/apps/backend/allure-results
+      - ./allure-report:/workspace/apps/backend/allure-report
+    command: ["pnpm", "run", "test:unit"]
+    profiles:
+      - unit
+
+  # Test runner for integration/e2e tests (requires database)
+  test-runner:
+    container_name: school_test_runner
+    build:
+      context: ../..
+      dockerfile: apps/backend/Dockerfile.test
+    env_file:
+      - .env.docker.test
+    environment:
+      POSTGRES_HOST: postgres-test
+      POSTGRES_PORT: 5432
+      POSTGRES_USER: ${POSTGRES_USER}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD}
+      POSTGRES_DB: ${POSTGRES_DB}
+      JWT_SECRET: ${JWT_SECRET}
+      IS_OFFLINE: "false"
+    depends_on:
+      postgres-test:
+        condition: service_healthy
+    volumes:
+      - ./allure-results:/workspace/apps/backend/allure-results
+      - ./allure-report:/workspace/apps/backend/allure-report
+    command: ["pnpm", "run", "test:parallel"]
+
+volumes:
+  pgdata-test:

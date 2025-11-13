@@ -1,0 +1,13 @@
+/// Миксин для контейнера:
+/// - max-width: 1220px
+/// - горизонтальные отступы: минимум 20px
+/// - автоматически центрируется
+/// @include container;
+@mixin container($max-width: 1240px, $gutters: 20px) {
+  width: calc(100% - (#{$gutters} * 2));
+  max-width: $max-width;
+  margin-left: auto;
+  margin-right: auto;
+  padding-left: $gutters;
+  padding-right: $gutters;
+}

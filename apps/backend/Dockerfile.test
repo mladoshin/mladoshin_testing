@@ -1,0 +1,33 @@
+# Test environment Dockerfile
+FROM node:20-alpine
+
+# Install pnpm
+RUN corepack enable && corepack prepare pnpm@latest --activate
+
+WORKDIR /workspace
+
+# Install necessary tools
+RUN apk add --no-cache bash curl
+
+# Copy workspace files
+COPY pnpm-workspace.yaml pnpm-lock.yaml ./
+COPY apps/backend/package.json ./apps/backend/
+COPY packages ./packages
+
+# Install all dependencies (including dev dependencies for testing)
+RUN pnpm install --frozen-lockfile --filter backend...
+
+# Copy backend source code and test files
+COPY apps/backend ./apps/backend
+
+WORKDIR /workspace/apps/backend
+
+# Create directories for test results with wide permissions
+RUN mkdir -p allure-results allure-report && \
+    chmod -R 777 allure-results allure-report
+
+# Note: Running as root in test container for simplicity
+# In production, use non-root user
+
+# Default command (can be overridden)
+CMD ["pnpm", "run", "test:parallel"]
