@@ -22,8 +22,14 @@ describe('CoursesController', () => {
   let controller: CoursesController;
   let service: Partial<Record<keyof ICoursesService, jest.Mock>>;
   let mockLoggerService: Partial<Record<keyof IAppLoggerService, jest.Mock>>;
+  let mockReq: any;
 
   beforeAll(async () => {
+    mockReq = {
+      headers: {
+        'x-test-schema': 'test_schema',
+      },
+    };
     // Create Jest mock functions for each service method
     service = {
       create: jest.fn(),
@@ -82,9 +88,9 @@ describe('CoursesController', () => {
 
       service.registerUser?.mockResolvedValue(mockEnrollment);
 
-      const result = await controller.register(mockUser, courseId);
+      const result = await controller.register(mockUser, courseId, mockReq);
 
-      expect(service.registerUser).toHaveBeenCalledWith(mockUser.id, courseId);
+      expect(service.registerUser).toHaveBeenCalledWith(mockUser.id, courseId, {schema: 'test_schema'});
       expect(result).toEqual(CourseEnrollmentResponse.make(mockEnrollment));
     });
 
@@ -93,7 +99,7 @@ describe('CoursesController', () => {
       service.registerUser!.mockRejectedValue(
         new RepositoryDuplicateError('', ''),
       );
-      await expect(controller.register(mockUser, 'bad-id')).rejects.toThrow(
+      await expect(controller.register(mockUser, 'bad-id', mockReq)).rejects.toThrow(
         RepositoryDuplicateError,
       );
     });
@@ -105,11 +111,12 @@ describe('CoursesController', () => {
       const mockUser = new JWTBuilder().build();
       service.purchaseCourse?.mockResolvedValue({});
 
-      const result = await controller.purchaseCourse(mockUser, courseId);
+      const result = await controller.purchaseCourse(mockUser, courseId, mockReq);
 
       expect(service.purchaseCourse).toHaveBeenCalledWith(
         mockUser.id,
         courseId,
+        {schema: 'test_schema'},
       );
       expect(result).toEqual({ success: true });
     });
@@ -119,7 +126,7 @@ describe('CoursesController', () => {
         new RepositoryDuplicateError('', ''),
       );
       await expect(
-        controller.purchaseCourse(mockUser, 'bad-id'),
+        controller.purchaseCourse(mockUser, 'bad-id', mockReq),
       ).rejects.toThrow(RepositoryDuplicateError);
     });
   });
@@ -137,16 +144,16 @@ describe('CoursesController', () => {
 
       service.create!.mockResolvedValue(sampleCourse);
 
-      const result = await controller.create(dto);
+      const result = await controller.create(dto, mockReq);
 
-      expect(service.create).toHaveBeenCalledWith(dto);
+      expect(service.create).toHaveBeenCalledWith(dto, {schema: 'test_schema'});
       expect(result).toEqual(CourseResponse.make(sampleCourse));
     });
     it('❌ should throw if service.create fails (negative)', async () => {
       const dto = CourseObjectMother.buildCreateDto();
       service.create!.mockRejectedValue(new RepositoryUnknownError('', ''));
 
-      await expect(controller.create(dto)).rejects.toThrow(
+      await expect(controller.create(dto, mockReq)).rejects.toThrow(
         RepositoryUnknownError,
       );
     });
@@ -158,14 +165,14 @@ describe('CoursesController', () => {
       const sampleCourse = new CourseBuilder().withName('Test Course').build();
       service.findAll!.mockResolvedValue([sampleCourse]);
 
-      const result = await controller.findAll();
+      const result = await controller.findAll(undefined, mockReq);
 
-      expect(service.findAll).toHaveBeenCalled();
+      expect(service.findAll).toHaveBeenCalledWith(undefined, {schema: 'test_schema'});
       expect(result).toEqual([CourseResponse.make(sampleCourse)]);
     });
     it('❌ should throw if service.findAll fails (negative)', async () => {
       service.findAll!.mockRejectedValue(new RepositoryUnknownError('', ''));
-      await expect(controller.findAll()).rejects.toThrow(
+      await expect(controller.findAll(undefined, mockReq)).rejects.toThrow(
         RepositoryUnknownError,
       );
     });
@@ -177,15 +184,15 @@ describe('CoursesController', () => {
       const sampleCourse = new CourseBuilder().withId('1').withName('Test Course').build();
       service.findOne!.mockResolvedValue(sampleCourse);
 
-      const result = await controller.findOne('1');
+      const result = await controller.findOne('1', undefined, mockReq);
 
-      expect(service.findOne).toHaveBeenCalledWith('1', undefined);
+      expect(service.findOne).toHaveBeenCalledWith('1', undefined, {schema: 'test_schema'});
       expect(result).toEqual(CourseResponse.make(sampleCourse));
     });
     it('❌ should throw if course not found (negative)', async () => {
       service.findOne!.mockRejectedValue(new RepositoryNotFoundError('', ''));
 
-      await expect(controller.findOne('999')).rejects.toThrow(
+      await expect(controller.findOne('999', undefined, mockReq)).rejects.toThrow(
         RepositoryNotFoundError,
       );
     });
@@ -194,7 +201,7 @@ describe('CoursesController', () => {
   // 5. update()
   describe('update', () => {
     it('should update a course and return CourseResponse', async () => {
-      const dto = CourseObjectMother.buildUpdateDto({ 
+      const dto = CourseObjectMother.buildUpdateDto({
         name: 'Updated',
         date_start: '2024-01-01',
         date_finish: '2024-02-01',
@@ -211,16 +218,16 @@ describe('CoursesController', () => {
 
       service.update!.mockResolvedValue(updatedCourse);
 
-      const result = await controller.update('1', dto);
+      const result = await controller.update('1', dto, mockReq);
 
-      expect(service.update).toHaveBeenCalledWith('1', dto);
+      expect(service.update).toHaveBeenCalledWith('1', dto, {schema: 'test_schema'});
       expect(result).toEqual(CourseResponse.make(updatedCourse));
     });
     it('❌ should throw if update fails (negative)', async () => {
       const dto = CourseObjectMother.buildUpdateDto({ name: 'Updated' });
       service.update!.mockRejectedValue(new RepositoryNotFoundError('', ''));
 
-      await expect(controller.update('1', dto)).rejects.toThrow(
+      await expect(controller.update('1', dto, mockReq)).rejects.toThrow(
         RepositoryNotFoundError,
       );
     });
@@ -232,16 +239,16 @@ describe('CoursesController', () => {
       const sampleCourse = new CourseBuilder().withId('1').withName('Test Course').build();
       service.remove!.mockResolvedValue(sampleCourse);
 
-      const result = await controller.remove('1');
+      const result = await controller.remove('1', mockReq);
 
-      expect(service.remove).toHaveBeenCalledWith('1');
+      expect(service.remove).toHaveBeenCalledWith('1', {schema: 'test_schema'});
       expect(result).toEqual(CourseResponse.make(sampleCourse));
     });
 
     it('❌ should throw if remove fails (negative)', async () => {
       service.remove!.mockRejectedValue(new RepositoryNotFoundError('', ''));
 
-      await expect(controller.remove('1')).rejects.toThrow(
+      await expect(controller.remove('1', mockReq)).rejects.toThrow(
         RepositoryNotFoundError,
       );
     });

@@ -13,8 +13,14 @@ describe('LessonsController', () => {
   let controller: LessonsController;
   let service: Partial<Record<keyof ILessonsService, jest.Mock>>;
   let mockLoggerService: Partial<Record<keyof IAppLoggerService, jest.Mock>>;
+  let mockReq: any;
 
   beforeAll(async () => {
+    mockReq = {
+      headers: {
+        'x-test-schema': 'test_schema',
+      },
+    };
     // Create Jest mock functions for each service method
     service = {
       create: jest.fn(),
@@ -61,20 +67,20 @@ describe('LessonsController', () => {
         CourseLessonMapper.toDomainEntity(sampleLesson),
       );
 
-      const result = await controller.create(dto);
+      const result = await controller.create(dto, mockReq);
 
-      expect(service.create).toHaveBeenCalledWith(dto);
+      expect(service.create).toHaveBeenCalledWith(dto, {schema: 'test_schema'});
       expect(result).toEqual(response);
     });
 
     it('should throw an error if service.create fails (negative)', async () => {
       const dto = CourseLessonObjectMother.buildCreateDto();
       service.create!.mockRejectedValue(new RepositoryUnknownError('', ''));
-      await expect(controller.create(dto)).rejects.toThrow(
+      await expect(controller.create(dto, mockReq)).rejects.toThrow(
         RepositoryUnknownError,
       );
 
-      expect(service.create).toHaveBeenCalledWith(dto);
+      expect(service.create).toHaveBeenCalledWith(dto, {schema: 'test_schema'});
     });
   });
 
@@ -84,20 +90,20 @@ describe('LessonsController', () => {
         CourseLessonMapper.toDomainEntity(sampleLesson),
       ]);
 
-      const result = await controller.findAll();
+      const result = await controller.findAll(mockReq);
 
-      expect(service.findAll).toHaveBeenCalled();
+      expect(service.findAll).toHaveBeenCalledWith({schema: 'test_schema'});
       expect(result).toEqual(responseList);
     });
 
     it('should throw an error if service.findAll fails (negative)', async () => {
       service.findAll!.mockRejectedValue(new RepositoryUnknownError('', ''));
 
-      await expect(controller.findAll()).rejects.toThrow(
+      await expect(controller.findAll(mockReq)).rejects.toThrow(
         RepositoryUnknownError,
       );
 
-      expect(service.findAll).toHaveBeenCalled();
+      expect(service.findAll).toHaveBeenCalledWith({schema: 'test_schema'});
     });
   });
 
@@ -105,20 +111,20 @@ describe('LessonsController', () => {
     it('should return a single CourseLessonResponse', async () => {
       service.findOne!.mockResolvedValue(CourseLessonMapper.toDomainEntity(sampleLesson));
 
-      const result = await controller.findOne(sampleLesson.id);
+      const result = await controller.findOne(sampleLesson.id, mockReq);
 
-      expect(service.findOne).toHaveBeenCalledWith(sampleLesson.id);
+      expect(service.findOne).toHaveBeenCalledWith(sampleLesson.id, {schema: 'test_schema'});
       expect(result).toEqual(response);
     });
 
     it('should throw an error if service.findOne fails (negative)', async () => {
       service.findOne!.mockRejectedValue(new RepositoryUnknownError('', ''));
 
-      await expect(controller.findOne(sampleLesson.id)).rejects.toThrow(
+      await expect(controller.findOne(sampleLesson.id, mockReq)).rejects.toThrow(
         RepositoryUnknownError,
       );
 
-      expect(service.findOne).toHaveBeenCalledWith(sampleLesson.id);
+      expect(service.findOne).toHaveBeenCalledWith(sampleLesson.id, {schema: 'test_schema'});
     });
   });
 
@@ -128,9 +134,9 @@ describe('LessonsController', () => {
       const updated = { ...sampleLesson, ...dto };
       service.update!.mockResolvedValue(CourseLessonMapper.toDomainEntity(updated));
 
-      const result = await controller.update(sampleLesson.id, dto);
+      const result = await controller.update(sampleLesson.id, dto, mockReq);
 
-      expect(service.update).toHaveBeenCalledWith(sampleLesson.id, dto);
+      expect(service.update).toHaveBeenCalledWith(sampleLesson.id, dto, {schema: 'test_schema'});
       expect(result).toEqual(CourseLessonResponse.make(CourseLessonMapper.toDomainEntity(updated)));
     });
 
@@ -138,11 +144,11 @@ describe('LessonsController', () => {
       const dto = CourseLessonObjectMother.buildUpdateDto();
       service.update!.mockRejectedValue(new RepositoryUnknownError('', ''));
 
-      await expect(controller.update(sampleLesson.id, dto)).rejects.toThrow(
+      await expect(controller.update(sampleLesson.id, dto, mockReq)).rejects.toThrow(
         RepositoryUnknownError,
       );
 
-      expect(service.update).toHaveBeenCalledWith(sampleLesson.id, dto);
+      expect(service.update).toHaveBeenCalledWith(sampleLesson.id, dto, {schema: 'test_schema'});
     });
   });
 
@@ -150,20 +156,20 @@ describe('LessonsController', () => {
     it('should remove a lesson and return CourseLessonResponse', async () => {
       service.remove!.mockResolvedValue(CourseLessonMapper.toDomainEntity(sampleLesson));
 
-      const result = await controller.remove(sampleLesson.id);
+      const result = await controller.remove(sampleLesson.id, mockReq);
 
-      expect(service.remove).toHaveBeenCalledWith(sampleLesson.id);
+      expect(service.remove).toHaveBeenCalledWith(sampleLesson.id, {schema: 'test_schema'});
       expect(result).toEqual(response);
     });
 
     it('should throw an error if service.remove fails (negative)', async () => {
       service.remove!.mockRejectedValue(new RepositoryUnknownError('', ''));
 
-      await expect(controller.remove(sampleLesson.id)).rejects.toThrow(
+      await expect(controller.remove(sampleLesson.id, mockReq)).rejects.toThrow(
         RepositoryUnknownError,
       );
 
-      expect(service.remove).toHaveBeenCalledWith(sampleLesson.id);
+      expect(service.remove).toHaveBeenCalledWith(sampleLesson.id, {schema: 'test_schema'});
     });
   });
 });

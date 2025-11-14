@@ -13,8 +13,14 @@ describe('UsersController (unit)', () => {
   let controller: UsersController;
   let service: Partial<Record<keyof IUsersService, jest.Mock>>;
   let mockLoggerService: Partial<Record<keyof IAppLoggerService, jest.Mock>>;
+  let mockReq: any;
 
   beforeAll(async () => {
+    mockReq = {
+      headers: {
+        'x-test-schema': 'test_schema',
+      },
+    };
     service = {
       create: jest.fn(),
       findAll: jest.fn(),
@@ -67,9 +73,9 @@ describe('UsersController (unit)', () => {
 
       service.create!.mockResolvedValue(user);
 
-      const result = await controller.create(dto);
+      const result = await controller.create(dto, mockReq);
 
-      expect(service.create).toHaveBeenCalledWith(dto);
+      expect(service.create).toHaveBeenCalledWith(dto, {schema: 'test_schema'});
       expect(result).toMatchObject({
         email: user.email,
         role: user.role,
@@ -81,8 +87,8 @@ describe('UsersController (unit)', () => {
 
       service.create!.mockRejectedValue(new Error('Ошибка создания пользователя'));
 
-      await expect(controller.create(dto)).rejects.toThrow('Ошибка создания пользователя');
-      expect(service.create).toHaveBeenCalledWith(dto);
+      await expect(controller.create(dto, mockReq)).rejects.toThrow('Ошибка создания пользователя');
+      expect(service.create).toHaveBeenCalledWith(dto, {schema: 'test_schema'});
     });
   });
 
@@ -100,9 +106,9 @@ describe('UsersController (unit)', () => {
 
       service.findAll!.mockResolvedValue([user1, user2]);
 
-      const result = await controller.findAll();
+      const result = await controller.findAll(mockReq);
 
-      expect(service.findAll).toHaveBeenCalled();
+      expect(service.findAll).toHaveBeenCalledWith({schema: 'test_schema'});
       expect(result).toHaveLength(2);
       expect(result[0]).toMatchObject({ email: user1.email });
       expect(result[1]).toMatchObject({ email: user2.email });
@@ -111,9 +117,9 @@ describe('UsersController (unit)', () => {
     it('❌ должен вернуть пустой массив когда пользователей нет', async () => {
       service.findAll!.mockResolvedValue([]);
 
-      const result = await controller.findAll();
+      const result = await controller.findAll(mockReq);
 
-      expect(service.findAll).toHaveBeenCalled();
+      expect(service.findAll).toHaveBeenCalledWith({schema: 'test_schema'});
       expect(result).toEqual([]);
       expect(result).toHaveLength(0);
     });
@@ -129,9 +135,9 @@ describe('UsersController (unit)', () => {
 
       service.findOne!.mockResolvedValue(user);
 
-      const result = await controller.findOne('user-1');
+      const result = await controller.findOne('user-1', mockReq);
 
-      expect(service.findOne).toHaveBeenCalledWith('user-1');
+      expect(service.findOne).toHaveBeenCalledWith('user-1', {schema: 'test_schema'});
       expect(result).toMatchObject({
         id: user.id,
         email: user.email,
@@ -143,10 +149,10 @@ describe('UsersController (unit)', () => {
         new RepositoryNotFoundError('Пользователь не найден', 'User'),
       );
 
-      await expect(controller.findOne('invalid-id')).rejects.toThrow(
+      await expect(controller.findOne('invalid-id', mockReq)).rejects.toThrow(
         RepositoryNotFoundError,
       );
-      expect(service.findOne).toHaveBeenCalledWith('invalid-id');
+      expect(service.findOne).toHaveBeenCalledWith('invalid-id', {schema: 'test_schema'});
     });
   });
 
@@ -166,9 +172,9 @@ describe('UsersController (unit)', () => {
 
       service.update!.mockResolvedValue(updatedUser);
 
-      const result = await controller.update('user-1', dto);
+      const result = await controller.update('user-1', dto, mockReq);
 
-      expect(service.update).toHaveBeenCalledWith('user-1', dto);
+      expect(service.update).toHaveBeenCalledWith('user-1', dto, {schema: 'test_schema'});
       expect(result).toMatchObject({
         id: 'user-1',
         first_name: 'Обновленное имя',
@@ -185,10 +191,10 @@ describe('UsersController (unit)', () => {
         new RepositoryNotFoundError('Пользователь не найден', 'User'),
       );
 
-      await expect(controller.update('invalid-id', dto)).rejects.toThrow(
+      await expect(controller.update('invalid-id', dto, mockReq)).rejects.toThrow(
         RepositoryNotFoundError,
       );
-      expect(service.update).toHaveBeenCalledWith('invalid-id', dto);
+      expect(service.update).toHaveBeenCalledWith('invalid-id', dto, {schema: 'test_schema'});
     });
   });
 
@@ -202,9 +208,9 @@ describe('UsersController (unit)', () => {
 
       service.remove!.mockResolvedValue(user);
 
-      const result = await controller.remove('user-1');
+      const result = await controller.remove('user-1', mockReq);
 
-      expect(service.remove).toHaveBeenCalledWith('user-1');
+      expect(service.remove).toHaveBeenCalledWith('user-1', {schema: 'test_schema'});
       expect(result).toMatchObject({
         id: user.id,
         email: user.email,
@@ -216,10 +222,10 @@ describe('UsersController (unit)', () => {
         new RepositoryNotFoundError('Пользователь не найден', 'User'),
       );
 
-      await expect(controller.remove('invalid-id')).rejects.toThrow(
+      await expect(controller.remove('invalid-id', mockReq)).rejects.toThrow(
         RepositoryNotFoundError,
       );
-      expect(service.remove).toHaveBeenCalledWith('invalid-id');
+      expect(service.remove).toHaveBeenCalledWith('invalid-id', {schema: 'test_schema'});
     });
   });
 });

@@ -45,7 +45,7 @@ describe('LessonsService', () => {
 
       const result = await service.create(dto);
 
-      expect(repo.create).toHaveBeenCalledWith(dto);
+      expect(repo.create).toHaveBeenCalledWith(dto, undefined);
       expect(result).toEqual(lesson);
     });
 

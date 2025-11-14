@@ -14,7 +14,7 @@ import { IAuthService } from './auth.service';
 import { LoginUserDto } from './dto/login.dto';
 import { RegisterUserDto } from './dto/register.dto';
 import { AuthResponse } from './dto/auth-response.dto';
-import { Response } from 'express';
+import { Request, Response } from 'express';
 import { TokenPair } from 'src/common/services/TokenService';
 import { JwtAuthGuard } from './guards/AuthGuard';
 import { User } from './decorators/UserDecorator';
@@ -41,8 +41,8 @@ export class AuthController {
 
   @Get('check')
   @AccessLog()
-  async checkUserByEmail(@Query() data: any, @Req() req) {
-    const result = await this.authService.check(data.email as string, {schema: req.headers['x-test-schema']});
+  async checkUserByEmail(@Query('email') email: string, @Req() req: Request) {
+    const result = await this.authService.check(email, {schema: req.headers['x-test-schema']});
     return { result };
   }
 

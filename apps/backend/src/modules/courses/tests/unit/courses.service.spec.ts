@@ -80,7 +80,7 @@ describe('CoursesService', () => {
       const result = await service.create(course);
 
       expect(result).toEqual(CourseMapper.toDomainEntity(course));
-      expect(mockCourseRepo.create).toHaveBeenCalledWith(course);
+      expect(mockCourseRepo.create).toHaveBeenCalledWith(course, undefined);
     });
     it('should throw an error if repository.create fails (negative)', async () => {
       const dto = CourseObjectMother.buildCreateDto();
@@ -91,7 +91,7 @@ describe('CoursesService', () => {
       await expect(service.create(dto)).rejects.toThrow(
         RepositoryDuplicateError,
       );
-      expect(mockCourseRepo.create).toHaveBeenCalledWith(dto);
+      expect(mockCourseRepo.create).toHaveBeenCalledWith(dto, undefined);
     });
   });
 
@@ -335,6 +335,7 @@ describe('CoursesService', () => {
         enrollment.user_id,
         course.id,
         CourseEnrollmentStatus.PAID,
+        undefined,
       );
     });
 

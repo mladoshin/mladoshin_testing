@@ -14,6 +14,7 @@ import { UserScheduleDomain } from '../../domains/user-schedule.domain';
 describe('UserScheduleController (Unit)', () => {
   let controller: UserScheduleController;
   let service: jest.Mocked<IUserScheduleService>;
+  let mockReq: any;
 
   const user: JWTPayload = {
     id: 'user-1',
@@ -22,6 +23,11 @@ describe('UserScheduleController (Unit)', () => {
   };
 
   beforeEach(async () => {
+    mockReq = {
+      headers: {
+        'x-test-schema': 'test_schema',
+      },
+    };
     const serviceMock: jest.Mocked<IUserScheduleService> = {
       generate: jest.fn(),
       create: jest.fn(),
@@ -72,9 +78,9 @@ describe('UserScheduleController (Unit)', () => {
       const scheduleDomains: UserScheduleDomain[] = [schedule1, schedule2];
       service.generate.mockResolvedValue(scheduleDomains);
 
-      const result = await controller.generate(user, dto);
+      const result = await controller.generate(user, dto, mockReq);
 
-      expect(service.generate).toHaveBeenCalledWith(user, dto);
+      expect(service.generate).toHaveBeenCalledWith(user, dto, {schema: 'test_schema'});
       expect(result).toBeDefined();
       expect(result).toHaveLength(2);
       expect(result![0]).toHaveProperty('id', 'schedule-1');
@@ -87,9 +93,9 @@ describe('UserScheduleController (Unit)', () => {
       });
       service.generate.mockResolvedValue([]);
 
-      const result = await controller.generate(user, dto);
+      const result = await controller.generate(user, dto, mockReq);
 
-      expect(service.generate).toHaveBeenCalledWith(user, dto);
+      expect(service.generate).toHaveBeenCalledWith(user, dto, {schema: 'test_schema'});
       expect(result).toHaveLength(0);
     });
   });
@@ -118,9 +124,9 @@ describe('UserScheduleController (Unit)', () => {
       const scheduleDomains: UserScheduleDomain[] = [schedule];
       service.create.mockResolvedValue(scheduleDomains);
 
-      const result = await controller.create(user, dto);
+      const result = await controller.create(user, dto, mockReq);
 
-      expect(service.create).toHaveBeenCalledWith(user, dto);
+      expect(service.create).toHaveBeenCalledWith(user, dto, {schema: 'test_schema'});
       expect(result).toBeDefined();
       expect(result).toHaveLength(1);
       expect(result![0]).toHaveProperty('id', 'schedule-1');
@@ -139,9 +145,9 @@ describe('UserScheduleController (Unit)', () => {
 
       service.create.mockResolvedValue([]);
 
-      const result = await controller.create(user, dto);
+      const result = await controller.create(user, dto, mockReq);
 
-      expect(service.create).toHaveBeenCalledWith(user, dto);
+      expect(service.create).toHaveBeenCalledWith(user, dto, {schema: 'test_schema'});
       expect(result).toHaveLength(0);
     });
   });
@@ -172,9 +178,9 @@ describe('UserScheduleController (Unit)', () => {
       const scheduleDomains: UserScheduleDomain[] = [schedule1, schedule2];
       service.getByUserAndCourse.mockResolvedValue(scheduleDomains);
 
-      const result = await controller.getUserSchedule(user, query);
+      const result = await controller.getUserSchedule(user, query, mockReq);
 
-      expect(service.getByUserAndCourse).toHaveBeenCalledWith(user, query);
+      expect(service.getByUserAndCourse).toHaveBeenCalledWith(user, query, {schema: 'test_schema'});
       expect(result).toBeDefined();
       expect(result).toHaveLength(2);
       expect(result![0]).toHaveProperty('id', 'schedule-1');
@@ -188,9 +194,9 @@ describe('UserScheduleController (Unit)', () => {
 
       service.getByUserAndCourse.mockResolvedValue([]);
 
-      const result = await controller.getUserSchedule(user, query);
+      const result = await controller.getUserSchedule(user, query, mockReq);
 
-      expect(service.getByUserAndCourse).toHaveBeenCalledWith(user, query);
+      expect(service.getByUserAndCourse).toHaveBeenCalledWith(user, query, {schema: 'test_schema'});
       expect(result).toHaveLength(0);
     });
   });
@@ -205,9 +211,9 @@ describe('UserScheduleController (Unit)', () => {
 
       service.deleteByUserAndCourse.mockResolvedValue(true);
 
-      const result = await controller.deleteUserSchedule(user, query);
+      const result = await controller.deleteUserSchedule(user, query, mockReq);
 
-      expect(service.deleteByUserAndCourse).toHaveBeenCalledWith(user, query);
+      expect(service.deleteByUserAndCourse).toHaveBeenCalledWith(user, query, {schema: 'test_schema'});
       expect(result).toEqual({ success: true });
     });
 
@@ -218,9 +224,9 @@ describe('UserScheduleController (Unit)', () => {
 
       service.deleteByUserAndCourse.mockResolvedValue(false);
 
-      const result = await controller.deleteUserSchedule(user, query);
+      const result = await controller.deleteUserSchedule(user, query, mockReq);
 
-      expect(service.deleteByUserAndCourse).toHaveBeenCalledWith(user, query);
+      expect(service.deleteByUserAndCourse).toHaveBeenCalledWith(user, query, {schema: 'test_schema'});
       expect(result).toEqual({ success: false });
     });
   });

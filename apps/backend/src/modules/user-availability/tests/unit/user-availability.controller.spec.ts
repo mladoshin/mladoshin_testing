@@ -14,6 +14,7 @@ import { RepositoryNotFoundError } from 'src/common/errors/db-errors';
 describe('UserAvailabilityController (Unit)', () => {
   let controller: UserAvailabilityController;
   let service: jest.Mocked<IUserAvailabilityService>;
+  let mockReq: any;
   const user: JWTPayload = {
     id: 'user-1',
     email: 'test@example.com',
@@ -21,6 +22,11 @@ describe('UserAvailabilityController (Unit)', () => {
   };
 
   beforeEach(async () => {
+    mockReq = {
+      headers: {
+        'x-test-schema': 'test_schema',
+      },
+    };
     const serviceMock: jest.Mocked<IUserAvailabilityService> = {
       create: jest.fn(),
       findByUserAndCourse: jest.fn(),
@@ -63,9 +69,9 @@ describe('UserAvailabilityController (Unit)', () => {
 
       service.create.mockResolvedValue(availability);
 
-      const result = await controller.create(user, dto);
+      const result = await controller.create(user, dto, mockReq);
 
-      expect(service.create).toHaveBeenCalledWith(user, dto);
+      expect(service.create).toHaveBeenCalledWith(user, dto, {schema: 'test_schema'});
       expect(result).toHaveProperty('id', 'availability-1');
     });
 
@@ -75,7 +81,7 @@ describe('UserAvailabilityController (Unit)', () => {
       });
       service.create.mockRejectedValue(new Error('Service error'));
 
-      await expect(controller.create(user, dto)).rejects.toThrow();
+      await expect(controller.create(user, dto, mockReq)).rejects.toThrow();
     });
   });
 
@@ -94,9 +100,9 @@ describe('UserAvailabilityController (Unit)', () => {
 
       service.findByUserAndCourse.mockResolvedValue(availabilities);
 
-      const result = await controller.findAll(user, query);
+      const result = await controller.findAll(user, query, mockReq);
 
-      expect(service.findByUserAndCourse).toHaveBeenCalledWith(user, query);
+      expect(service.findByUserAndCourse).toHaveBeenCalledWith(user, query, {schema: 'test_schema'});
       expect(Array.isArray(result)).toBe(true);
       expect(result).toHaveLength(1);
     });
@@ -105,7 +111,7 @@ describe('UserAvailabilityController (Unit)', () => {
       const query: GetUserAvailabilitiesQueryDto = { course_id: 'course-1' };
       service.findByUserAndCourse.mockRejectedValue(new Error('Service error'));
 
-      await expect(controller.findAll(user, query)).rejects.toThrow();
+      await expect(controller.findAll(user, query, mockReq)).rejects.toThrow();
     });
   });
 
@@ -118,9 +124,9 @@ describe('UserAvailabilityController (Unit)', () => {
 
       service.findById.mockResolvedValue(availability);
 
-      const result = await controller.findOne('availability-1');
+      const result = await controller.findOne('availability-1', mockReq);
 
-      expect(service.findById).toHaveBeenCalledWith('availability-1');
+      expect(service.findById).toHaveBeenCalledWith('availability-1', {schema: 'test_schema'});
       expect(result).toHaveProperty('id', 'availability-1');
     });
 
@@ -132,7 +138,7 @@ describe('UserAvailabilityController (Unit)', () => {
         ),
       );
 
-      await expect(controller.findOne('availability-1')).rejects.toThrow(
+      await expect(controller.findOne('availability-1', mockReq)).rejects.toThrow(
         NotFoundException,
       );
     });
@@ -156,9 +162,9 @@ describe('UserAvailabilityController (Unit)', () => {
 
       service.update.mockResolvedValue(availability);
 
-      const result = await controller.update('availability-1', updateDto);
+      const result = await controller.update('availability-1', updateDto, mockReq);
 
-      expect(service.update).toHaveBeenCalledWith('availability-1', updateDto);
+      expect(service.update).toHaveBeenCalledWith('availability-1', updateDto, {schema: 'test_schema'});
       expect(result).toHaveProperty('id', 'availability-1');
     });
 
@@ -172,7 +178,7 @@ describe('UserAvailabilityController (Unit)', () => {
       );
 
       await expect(
-        controller.update('availability-1', updateDto),
+        controller.update('availability-1', updateDto, mockReq),
       ).rejects.toThrow();
     });
   });
@@ -186,9 +192,9 @@ describe('UserAvailabilityController (Unit)', () => {
 
       service.delete.mockResolvedValue(availability);
 
-      const result = await controller.remove('availability-1');
+      const result = await controller.remove('availability-1', mockReq);
 
-      expect(service.delete).toHaveBeenCalledWith('availability-1');
+      expect(service.delete).toHaveBeenCalledWith('availability-1', {schema: 'test_schema'});
       expect(result).toHaveProperty('id', 'availability-1');
     });
 
@@ -200,7 +206,7 @@ describe('UserAvailabilityController (Unit)', () => {
         ),
       );
 
-      await expect(controller.remove('availability-1')).rejects.toThrow();
+      await expect(controller.remove('availability-1', mockReq)).rejects.toThrow();
     });
   });
 });

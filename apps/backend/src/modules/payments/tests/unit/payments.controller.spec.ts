@@ -13,8 +13,14 @@ describe('PaymentsController (unit)', () => {
   let controller: PaymentsController;
   let service: Partial<Record<keyof IPaymentsService, jest.Mock>>;
   let mockLoggerService: Partial<Record<keyof IAppLoggerService, jest.Mock>>;
+  let mockReq: any;
 
   beforeAll(async () => {
+    mockReq = {
+      headers: {
+        'x-test-schema': 'test_schema',
+      },
+    };
     service = {
       create: jest.fn(),
       findAll: jest.fn(),
@@ -65,9 +71,9 @@ describe('PaymentsController (unit)', () => {
 
       service.create!.mockResolvedValue(payment);
 
-      const result = await controller.create(dto);
+      const result = await controller.create(dto, mockReq);
 
-      expect(service.create).toHaveBeenCalledWith(dto);
+      expect(service.create).toHaveBeenCalledWith(dto, {schema: 'test_schema'});
       expect(result).toMatchObject({
         amount: payment.amount,
         user_id: payment.user_id,
@@ -80,8 +86,8 @@ describe('PaymentsController (unit)', () => {
 
       service.create!.mockRejectedValue(new Error('Ошибка создания платежа'));
 
-      await expect(controller.create(dto)).rejects.toThrow('Ошибка создания платежа');
-      expect(service.create).toHaveBeenCalledWith(dto);
+      await expect(controller.create(dto, mockReq)).rejects.toThrow('Ошибка создания платежа');
+      expect(service.create).toHaveBeenCalledWith(dto, {schema: 'test_schema'});
     });
   });
 
@@ -99,9 +105,9 @@ describe('PaymentsController (unit)', () => {
 
       service.findAll!.mockResolvedValue([payment1, payment2]);
 
-      const result = await controller.findAll();
+      const result = await controller.findAll(mockReq);
 
-      expect(service.findAll).toHaveBeenCalled();
+      expect(service.findAll).toHaveBeenCalledWith({schema: 'test_schema'});
       expect(result).toHaveLength(2);
       expect(result[0]).toMatchObject({ user_id: payment1.user_id });
       expect(result[1]).toMatchObject({ user_id: payment2.user_id });
@@ -110,9 +116,9 @@ describe('PaymentsController (unit)', () => {
     it('❌ должен вернуть пустой массив когда платежей нет', async () => {
       service.findAll!.mockResolvedValue([]);
 
-      const result = await controller.findAll();
+      const result = await controller.findAll(mockReq);
 
-      expect(service.findAll).toHaveBeenCalled();
+      expect(service.findAll).toHaveBeenCalledWith({schema: 'test_schema'});
       expect(result).toEqual([]);
       expect(result).toHaveLength(0);
     });
@@ -129,9 +135,9 @@ describe('PaymentsController (unit)', () => {
 
       service.findOne!.mockResolvedValue(payment);
 
-      const result = await controller.findOne('pay-1');
+      const result = await controller.findOne('pay-1', mockReq);
 
-      expect(service.findOne).toHaveBeenCalledWith('pay-1');
+      expect(service.findOne).toHaveBeenCalledWith('pay-1', {schema: 'test_schema'});
       expect(result).toMatchObject({
         id: payment.id,
         user_id: payment.user_id,
@@ -143,10 +149,10 @@ describe('PaymentsController (unit)', () => {
         new RepositoryNotFoundError('Платеж не найден', 'Payment'),
       );
 
-      await expect(controller.findOne('invalid-id')).rejects.toThrow(
+      await expect(controller.findOne('invalid-id', mockReq)).rejects.toThrow(
         RepositoryNotFoundError,
       );
-      expect(service.findOne).toHaveBeenCalledWith('invalid-id');
+      expect(service.findOne).toHaveBeenCalledWith('invalid-id', {schema: 'test_schema'});
     });
   });
 
@@ -164,9 +170,9 @@ describe('PaymentsController (unit)', () => {
 
       service.update!.mockResolvedValue(updatedPayment);
 
-      const result = await controller.update('pay-1', dto);
+      const result = await controller.update('pay-1', dto, mockReq);
 
-      expect(service.update).toHaveBeenCalledWith('pay-1', dto);
+      expect(service.update).toHaveBeenCalledWith('pay-1', dto, {schema: 'test_schema'});
       expect(result).toMatchObject({
         amount: 200,
         id: 'pay-1',
@@ -182,10 +188,10 @@ describe('PaymentsController (unit)', () => {
         new RepositoryNotFoundError('Платеж не найден', 'Payment'),
       );
 
-      await expect(controller.update('invalid-id', dto)).rejects.toThrow(
+      await expect(controller.update('invalid-id', dto, mockReq)).rejects.toThrow(
         RepositoryNotFoundError,
       );
-      expect(service.update).toHaveBeenCalledWith('invalid-id', dto);
+      expect(service.update).toHaveBeenCalledWith('invalid-id', dto, {schema: 'test_schema'});
     });
   });
 
@@ -199,9 +205,9 @@ describe('PaymentsController (unit)', () => {
 
       service.remove!.mockResolvedValue(payment);
 
-      const result = await controller.remove('pay-1');
+      const result = await controller.remove('pay-1', mockReq);
 
-      expect(service.remove).toHaveBeenCalledWith('pay-1');
+      expect(service.remove).toHaveBeenCalledWith('pay-1', {schema: 'test_schema'});
       expect(result).toMatchObject({ id: payment.id });
     });
 
@@ -210,10 +216,10 @@ describe('PaymentsController (unit)', () => {
         new RepositoryNotFoundError('Платеж не найден', 'Payment'),
       );
 
-      await expect(controller.remove('invalid-id')).rejects.toThrow(
+      await expect(controller.remove('invalid-id', mockReq)).rejects.toThrow(
         RepositoryNotFoundError,
       );
-      expect(service.remove).toHaveBeenCalledWith('invalid-id');
+      expect(service.remove).toHaveBeenCalledWith('invalid-id', {schema: 'test_schema'});
     });
   });
 });

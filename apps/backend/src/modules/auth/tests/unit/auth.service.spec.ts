@@ -114,6 +114,7 @@ describe('AuthService', () => {
       expect(result).toEqual({ accessToken: 'token', refreshToken: 'token' });
       expect(userRepo.create).toHaveBeenCalledWith(
         expect.objectContaining({ password: 'hashedPassword' }),
+        undefined,
       );
     });
   });

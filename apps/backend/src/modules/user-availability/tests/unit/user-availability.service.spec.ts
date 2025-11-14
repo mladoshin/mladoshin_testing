@@ -59,7 +59,7 @@ describe('UserAvailabilityService', () => {
 
       const result = await service.create(user, dto);
 
-      expect(repo.create).toHaveBeenCalledWith(user.id, dto);
+      expect(repo.create).toHaveBeenCalledWith(user.id, dto, undefined);
       expect(result).toEqual(availability);
     });
 
@@ -92,6 +92,7 @@ describe('UserAvailabilityService', () => {
       expect(repo.findAllByUserAndCourse).toHaveBeenCalledWith(
         user.id,
         'course-1',
+        undefined,
       );
       expect(result).toEqual(availabilities);
     });
@@ -114,7 +115,7 @@ describe('UserAvailabilityService', () => {
 
       const result = await service.findById('availability-1');
 
-      expect(repo.findById).toHaveBeenCalledWith('availability-1');
+      expect(repo.findById).toHaveBeenCalledWith('availability-1', undefined);
       expect(result).toEqual(availability);
     });
 
@@ -144,7 +145,7 @@ describe('UserAvailabilityService', () => {
 
       const result = await service.update('availability-1', updateDto);
 
-      expect(repo.update).toHaveBeenCalledWith('availability-1', updateDto);
+      expect(repo.update).toHaveBeenCalledWith('availability-1', updateDto, undefined);
       expect(result).toEqual(availability);
     });
 
@@ -169,7 +170,7 @@ describe('UserAvailabilityService', () => {
 
       const result = await service.delete('availability-1');
 
-      expect(repo.delete).toHaveBeenCalledWith('availability-1');
+      expect(repo.delete).toHaveBeenCalledWith('availability-1', undefined);
       expect(result).toEqual(availability);
     });
 

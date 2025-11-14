@@ -18,6 +18,7 @@ describe('AuthController', () => {
   let controller: AuthController;
   let mockAuthService: Partial<Record<keyof IAuthService, jest.Mock>>;
   let mockLoggerService: Partial<Record<keyof IAppLoggerService, jest.Mock>>;
+  let mockReq: any;
 
   mockAuthService = {
     check: jest.fn(),
@@ -37,6 +38,11 @@ describe('AuthController', () => {
   };
 
   beforeEach(async () => {
+    mockReq = {
+      headers: {
+        'x-test-schema': 'test_schema',
+      },
+    };
     const module: TestingModule = await Test.createTestingModule({
       imports: [ConfigModule],
       controllers: [AuthController],
@@ -63,7 +69,7 @@ describe('AuthController', () => {
       cookie: jest.fn(),
     };
 
-    const result = await controller.login(dto, res);
+    const result = await controller.login(dto, res, mockReq);
 
     expect(res.cookie).toHaveBeenCalledWith(
       'refresh_token',
@@ -85,7 +91,7 @@ describe('AuthController', () => {
     const dto = AuthObjectMother.buildLoginDto();
     const fakeRes: any = { cookie: jest.fn() };
 
-    await expect(controller.login(dto, fakeRes)).rejects.toBeInstanceOf(
+    await expect(controller.login(dto, fakeRes, mockReq)).rejects.toBeInstanceOf(
       UnauthorizedException,
     );
 
@@ -102,7 +108,7 @@ describe('AuthController', () => {
       cookie: jest.fn(),
     };
 
-    const result = await controller.register(dto, res);
+    const result = await controller.register(dto, res, mockReq);
 
     expect(res.cookie).toHaveBeenCalledWith(
       'refresh_token',
@@ -129,7 +135,7 @@ describe('AuthController', () => {
       cookie: jest.fn(),
     };
 
-    await expect(controller.register(dto, res)).rejects.toBeInstanceOf(
+    await expect(controller.register(dto, res, mockReq)).rejects.toBeInstanceOf(
       ConflictException,
     );
     expect(res.cookie).not.toHaveBeenCalled();
@@ -139,8 +145,9 @@ describe('AuthController', () => {
     const fakeUser = new UserBuilder().build();
     mockAuthService.getMe!.mockResolvedValue(fakeUser);
 
-    const result = await controller.getMe(fakeUser.id);
+    const result = await controller.getMe(fakeUser.id, mockReq);
 
+    expect(mockAuthService.getMe).toHaveBeenCalledWith(fakeUser.id, {schema: 'test_schema'});
     expect(result).toBeInstanceOf(UserResponse);
     expect(result).toEqual(UserResponse.make(fakeUser));
   });
@@ -150,9 +157,10 @@ describe('AuthController', () => {
       throw new NotFoundException();
     });
 
-    await expect(controller.getMe('user-123')).rejects.toBeInstanceOf(
+    await expect(controller.getMe('user-123', mockReq)).rejects.toBeInstanceOf(
       NotFoundException,
     );
+    expect(mockAuthService.getMe).toHaveBeenCalledWith('user-123', {schema: 'test_schema'});
   });
 
   it('logout', async () => {
@@ -185,7 +193,8 @@ describe('AuthController', () => {
     mockAuthService.check!.mockResolvedValue(true);
 
     // Act
-    const result = await controller.checkUserByEmail('mladoshin@mail.ru');
+    const result = await controller.checkUserByEmail('mladoshin@mail.ru', mockReq);
+    expect(mockAuthService.check).toHaveBeenCalledWith('mladoshin@mail.ru', {schema: 'test_schema'});
     expect(result).toEqual({ result: true });
   });
 
@@ -193,7 +202,8 @@ describe('AuthController', () => {
     mockAuthService.check!.mockResolvedValue(false);
 
     // Act
-    const result = await controller.checkUserByEmail('mladoshin@mail.ru');
+    const result = await controller.checkUserByEmail('mladoshin@mail.ru', mockReq);
+    expect(mockAuthService.check).toHaveBeenCalledWith('mladoshin@mail.ru', {schema: 'test_schema'});
     expect(result).toEqual({ result: false });
   });
 });

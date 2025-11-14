@@ -65,7 +65,7 @@ describe('UserScheduleService (Unit)', () => {
 
       const result = await service.generate(user, dto);
 
-      expect(repo.generate).toHaveBeenCalledWith(user.id, 'course-1');
+      expect(repo.generate).toHaveBeenCalledWith(user.id, 'course-1', undefined);
       expect(result).toEqual(schedules);
       expect(result).toHaveLength(2);
     });
@@ -80,7 +80,7 @@ describe('UserScheduleService (Unit)', () => {
       );
 
       await expect(service.generate(user, dto)).rejects.toThrow();
-      expect(repo.generate).toHaveBeenCalledWith(user.id, 'course-1');
+      expect(repo.generate).toHaveBeenCalledWith(user.id, 'course-1', undefined);
     });
   });
 
@@ -110,7 +110,7 @@ describe('UserScheduleService (Unit)', () => {
 
       const result = await service.create(user, dto);
 
-      expect(repo.create).toHaveBeenCalledWith(user.id, dto.data);
+      expect(repo.create).toHaveBeenCalledWith(user.id, dto.data, undefined);
       expect(result).toEqual(schedules);
       expect(result).toHaveLength(1);
     });
@@ -129,7 +129,7 @@ describe('UserScheduleService (Unit)', () => {
       );
 
       await expect(service.create(user, dto)).rejects.toThrow();
-      expect(repo.create).toHaveBeenCalledWith(user.id, dto.data);
+      expect(repo.create).toHaveBeenCalledWith(user.id, dto.data, undefined);
     });
   });
 
@@ -160,7 +160,7 @@ describe('UserScheduleService (Unit)', () => {
 
       const result = await service.getByUserAndCourse(user, query);
 
-      expect(repo.getByUserAndCourse).toHaveBeenCalledWith(user.id, 'course-1');
+      expect(repo.getByUserAndCourse).toHaveBeenCalledWith(user.id, 'course-1', undefined);
       expect(result).toEqual(schedules);
       expect(result).toHaveLength(2);
     });
@@ -175,7 +175,7 @@ describe('UserScheduleService (Unit)', () => {
       );
 
       await expect(service.getByUserAndCourse(user, query)).rejects.toThrow();
-      expect(repo.getByUserAndCourse).toHaveBeenCalledWith(user.id, 'course-1');
+      expect(repo.getByUserAndCourse).toHaveBeenCalledWith(user.id, 'course-1', undefined);
     });
   });
 
@@ -190,7 +190,7 @@ describe('UserScheduleService (Unit)', () => {
 
       const result = await service.deleteByUserAndCourse(user, query);
 
-      expect(repo.deleteByUserAndCourse).toHaveBeenCalledWith(user.id, 'course-1');
+      expect(repo.deleteByUserAndCourse).toHaveBeenCalledWith(user.id, 'course-1', undefined);
       expect(result).toBe(true);
     });
 
@@ -204,7 +204,7 @@ describe('UserScheduleService (Unit)', () => {
       );
 
       await expect(service.deleteByUserAndCourse(user, query)).rejects.toThrow();
-      expect(repo.deleteByUserAndCourse).toHaveBeenCalledWith(user.id, 'course-1');
+      expect(repo.deleteByUserAndCourse).toHaveBeenCalledWith(user.id, 'course-1', undefined);
     });
   });
 });
