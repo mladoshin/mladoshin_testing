@@ -52,6 +52,8 @@
     "docker:local:test:integration": "docker-compose -f docker-compose.local.test.yml run --rm test-runner pnpm run test:integration",
     "docker:local:test:e2e": "docker-compose -f docker-compose.local.test.yml run --rm test-runner pnpm run test:e2e",
     "docker:local:reset-db": "docker-compose -f docker-compose.local.test.yml exec backend-test sh ./scripts/reset-db.sh",
+    "docker:local:start-runners": "./tests/scripts/start-runners.sh",
+    "docker:local:run-test": "./tests/scripts/run-test.sh",
 
     "docker:test:allure": "docker-compose -f docker-compose.test.yml run --rm test-runner sh -c 'pnpm run test && pnpm run allure:append'",
     "docker:reset-db": "docker-compose -f docker-compose.test.yml exec backend-test sh ./scripts/reset-db.sh",

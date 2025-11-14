@@ -1,354 +1,438 @@
-# Testing Guide - Docker-based HTTP Testing
+# Руководство по запуску тестов
 
-This document describes the new Docker-based testing approach with separate backend and test runner containers.
+Это руководство описывает все способы запуска тестов на бэкенде проекта.
 
-## Overview
+## Содержание
 
-The testing infrastructure has been redesigned to:
-- Run tests via HTTP requests to an external backend
-- Use Docker containers for isolated testing environments
-- Implement schema isolation for parallel test execution
-- Support both unit and integration/e2e tests
+- [Типы тестов](#типы-тестов)
+- [Локальный запуск](#локальный-запуск)
+  - [Обычный запуск](#обычный-запуск)
+  - [Запуск в Docker](#запуск-в-docker)
+  - [Параллельный запуск в Docker](#параллельный-запуск-в-docker)
+- [Запуск в CI/CD](#запуск-в-cicd)
+- [Отчеты Allure](#отчеты-allure)
+- [Полезные команды](#полезные-команды)
 
-## Architecture
+---
 
-### Services
+## Типы тестов
 
-1. **postgres-test**: PostgreSQL database for tests
-2. **backend-test**: NestJS backend running in test mode
-3. **test-runner**: Container that runs integration/e2e tests via HTTP
-4. **test-runner-unit**: Container that runs unit tests (no backend required)
+В проекте используются три типа тестов:
 
-### Test Types
+### 1. Unit-тесты
+- **Расположение:** `src/modules/*/tests/unit/*.spec.ts`
+- **Назначение:** Тестирование изолированных функций и методов
+- **Зависимости:** Не требуют БД или внешних сервисов
+- **Параллелизация:** Запускаются с 2 воркерами (можно увеличить до 4)
+- **Таймаут:** 10 секунд
 
-#### Unit Tests
-- Run with mocks (IS_OFFLINE=true)
-- No HTTP requests, no database
-- Fast execution
-- Location: `src/modules/*/tests/unit/*.spec.ts`
-- **No changes needed** - unit tests remain the same
+### 2. Integration-тесты
+- **Расположение:** `src/modules/*/tests/integration/*.spec.ts`
+- **Назначение:** Тестирование взаимодействия компонентов и работы с БД
+- **Зависимости:** Требуют PostgreSQL
+- **Параллелизация:** Запускаются последовательно (1 воркер) из-за работы с БД
+- **Таймаут:** 30 секунд
 
-#### Integration Tests
-- Make HTTP requests to backend-test
-- Use schema isolation via `X-Test-Schema` header
-- Test API endpoints and service integration
-- Location: `src/modules/*/tests/integration/*.spec.ts`
-- **Require rewriting** to use ApiTestClient
+### 3. E2E-тесты (End-to-End)
+- **Расположение:** `src/modules/*/tests/e2e/*.spec.ts`
+- **Назначение:** Тестирование полных пользовательских сценариев через HTTP API
+- **Зависимости:** Требуют запущенный backend и PostgreSQL
+- **Параллелизация:** Запускаются последовательно (1 воркер)
+- **Таймаут:** 60 секунд
 
-#### E2E Tests
-- Make HTTP requests to backend-test
-- Test complete user flows
-- Use schema isolation
-- Location: `tests/e2e/*.e2e-spec.ts`
-- **Require rewriting** to use ApiTestClient
+---
 
-## Schema Isolation Pattern
+## Локальный запуск
 
-Each test gets its own isolated PostgreSQL schema:
+### Обычный запуск
 
-1. Test creates a unique schema name (e.g., `test_schema_abc123`)
-2. API endpoint `/api/test/create-schema` creates the schema and runs migrations
-3. All HTTP requests include `X-Test-Schema: test_schema_abc123` header
-4. Backend middleware routes queries to the correct schema
-5. After test, `/api/test/drop-schema` cleans up
+Для локального запуска тестов без Docker:
 
-### Benefits
-- Tests run in parallel without interfering
-- No need for complex transaction rollback logic
-- Clean isolation between test suites
-- Fast cleanup
+```bash
+# Unit-тесты
+pnpm test:unit
 
-## Writing Integration/E2E Tests
+# Integration-тесты (требуется локальная PostgreSQL)
+pnpm test:integration
 
-### Basic Structure
+# E2E-тесты (требуется запущенный backend)
+pnpm test:e2e
 
-\`\`\`typescript
-import { ApiTestClient, setupTestClient, teardownTestClient } from '../../helpers/api-client';
-import { createTestFactories, TestFactories } from '../../helpers/test-factories';
+# Все тесты параллельно (4 воркера)
+pnpm test:parallel
 
-describe('Feature Tests', () => {
-  let client: ApiTestClient;
-  let factories: TestFactories;
+# Все тесты последовательно
+pnpm test:sequential
 
-  beforeAll(async () => {
-    // Create HTTP client with isolated schema
-    client = await setupTestClient();
-    factories = createTestFactories(client);
-  });
+# С генерацией Allure-отчета
+pnpm test
+```
 
-  afterAll(async () => {
-    // Cleanup: drop the test schema
-    await teardownTestClient(client);
-  });
+### Запуск в Docker
 
-  beforeEach(async () => {
-    // Create test data via API
-    const user = await factories.users.create();
-    const loginResult = await factories.users.login(user.email, 'password');
-    client.setAuthToken(loginResult.accessToken);
-  });
+Запуск тестов в изолированном Docker-окружении:
 
-  afterEach(async () => {
-    // Reset schema (truncate all tables)
-    await client.resetSchema();
-    client.clearAuthToken();
-  });
+#### Подготовка окружения
 
-  it('should do something', async () => {
-    const response = await client.get('/api/endpoint');
-    expect(response.status).toBe(200);
-  });
-});
-\`\`\`
+```bash
+# Сборка образов
+pnpm docker:local:build
 
-### API Test Client
+# Запуск инфраструктуры (PostgreSQL + Backend)
+pnpm docker:local:up
 
-The `ApiTestClient` provides:
+# Просмотр логов
+pnpm docker:local:logs
 
-\`\`\`typescript
-// HTTP methods
-await client.get(url, config)
-await client.post(url, data, config)
-await client.put(url, data, config)
-await client.patch(url, data, config)
-await client.delete(url, config)
+# Остановка и очистка
+pnpm docker:local:down
+```
 
-// Schema management
-await client.createSchema()    // Create isolated schema
-await client.dropSchema()      // Drop schema
-await client.resetSchema()     // Truncate all tables
+#### Запуск тестов
 
-// Authentication
-client.setAuthToken(token)     // Set JWT token
-client.clearAuthToken()        // Remove token
+```bash
+# Unit-тесты
+pnpm docker:local:test:unit
 
-// Info
-client.getSchemaName()         // Get schema name
-client.getBaseURL()            // Get base URL
-\`\`\`
+# Integration-тесты
+pnpm docker:local:test:integration
 
-### Test Factories
+# E2E-тесты
+pnpm docker:local:test:e2e
+```
 
-Helper factories for creating test data:
+### Параллельный запуск в Docker
 
-\`\`\`typescript
-const factories = createTestFactories(client);
+Для ускорения выполнения тестов можно запустить несколько test-runner контейнеров параллельно.
 
-// Create user
-const user = await factories.users.create({
-  email: 'test@example.com',
-  password: 'Test123456',
-  firstName: 'Test',
-  lastName: 'User',
-});
+#### Способ 1: Используя готовые скрипты (рекомендуется)
 
-// Login
-const { accessToken } = await factories.users.login(email, password);
+```bash
+# 1. Запустить несколько раннеров (по умолчанию 2)
+pnpm docker:local:start-runners
 
-// Create course
-const course = await factories.courses.create({
-  name: 'Test Course',
-  price: 100,
-});
-\`\`\`
+# Или указать количество раннеров явно
+pnpm docker:local:start-runners 3
 
-## Running Tests
+# 2. Запустить тесты на конкретном раннере
+pnpm docker:local:run-test unit 1        # Unit-тесты на раннере #1
+pnpm docker:local:run-test integration 2  # Integration-тесты на раннере #2
+pnpm docker:local:run-test e2e           # E2E-тесты на раннере #1 (по умолчанию)
+```
 
-### Docker Commands
+#### Способ 2: Прямые команды Docker Compose
 
-\`\`\`bash
-# Run only backend (for manual testing or demonstration)
-pnpm docker:test:backend-only
+```bash
+# 1. Запустить инфраструктуру и 3 раннера
+cd apps/backend
+docker compose -f docker-compose.local.test.yml up -d --scale test-runner=3
 
-# Run unit tests only
-pnpm docker:test:unit
+# 2. Посмотреть список запущенных раннеров
+docker compose -f docker-compose.local.test.yml ps test-runner
 
-# Run integration and e2e tests
-docker-compose -f docker-compose.test.yml --profile test up test-runner
+# 3. Запустить тесты на конкретном раннере
+# Получить имя контейнера
+RUNNER_NAME=$(docker compose -f docker-compose.local.test.yml ps test-runner --format json | jq -r '.[0].Name')
 
-# Run all tests
-pnpm docker:test
-\`\`\`
+# Запустить тесты
+docker exec -it $RUNNER_NAME pnpm run test:unit
+```
 
-### Local Development
+#### Способ 3: Параллельный запуск разных типов тестов
 
-Local testing is **not supported**. All tests must run via Docker to ensure consistency.
+```bash
+# Запустить три типа тестов одновременно в фоновом режиме
+cd apps/backend
 
-## Test API Endpoints
+docker compose -f docker-compose.local.test.yml run -d --name test-runner-unit test-runner pnpm run test:unit &
+docker compose -f docker-compose.local.test.yml run -d --name test-runner-integration test-runner pnpm run test:integration &
+docker compose -f docker-compose.local.test.yml run -d --name test-runner-e2e test-runner pnpm run test:e2e &
 
-The following endpoints are available **only** in test environment (NODE_ENV=test):
+# Дождаться завершения всех
+wait
 
-### POST /api/test/create-schema
-Creates an isolated schema and runs migrations.
+# Посмотреть результаты
+docker logs test-runner-unit
+docker logs test-runner-integration
+docker logs test-runner-e2e
+```
 
-**Headers:**
-- `X-Test-Schema: schema_name`
+⚠️ **Важно:** Integration и E2E тесты используют одну БД, поэтому могут конфликтовать при одновременном запуске. Для надежности рекомендуется запускать их последовательно или на разных раннерах с временным интервалом.
 
-**Response:**
-\`\`\`json
-{
-  "message": "Schema created successfully",
-  "schema": "test_schema_abc123"
-}
-\`\`\`
+---
 
-### POST /api/test/drop-schema
-Drops an isolated schema.
+## Запуск в CI/CD
 
-**Headers:**
-- `X-Test-Schema: schema_name`
+Тесты автоматически запускаются в GitHub Actions при:
+- Push в ветки `main`, `develop`, `lab_02`
+- Pull Request в ветки `main`, `develop`
+- Изменениях в `apps/backend/**`, `packages/**` или `.github/workflows/test.yml`
 
-### POST /api/test/reset-schema
-Truncates all tables in a schema.
+### Этапы CI/CD
 
-**Headers:**
-- `X-Test-Schema: schema_name`
+1. **Unit Tests** (параллельно, ~2-3 мин)
+   - Запуск PostgreSQL
+   - Запуск unit-тестов с 2 воркерами
+   - Сохранение результатов
 
-## Migrations
+2. **Integration Tests** (последовательно, ~5-7 мин)
+   - Зависит от успешного завершения Unit Tests
+   - Запуск PostgreSQL и Backend
+   - Запуск integration-тестов
+   - Сохранение результатов
 
-### Creating Migrations
+3. **E2E Tests** (последовательно, ~3-5 мин)
+   - Зависит от успешного завершения Integration Tests
+   - Запуск PostgreSQL и Backend
+   - Запуск e2e-тестов
+   - Сохранение результатов
 
-\`\`\`bash
-# Generate migration from entity changes
-pnpm migration:generate src/database/migrations/MigrationName
+4. **Generate Report** (финальный этап)
+   - Объединение результатов всех тестов
+   - Генерация Allure-отчета
+   - Публикация на GitHub Pages (только для `main`)
 
-# Create empty migration
-pnpm migration:create src/database/migrations/MigrationName
-\`\`\`
+### Параллелизация в CI/CD
 
-### Running Migrations
+Тесты запускаются как отдельные GitHub Actions jobs, что позволяет им выполняться параллельно на разных раннерах GitHub. Последовательность задается через `needs`:
 
-Migrations run automatically when backend-test starts:
+```yaml
+jobs:
+  unit-tests:
+    # Запускается первым
 
-\`\`\`bash
-pnpm migration:run && pnpm seed:run && node dist/main
-\`\`\`
+  integration-tests:
+    needs: unit-tests  # Запускается после unit-tests
 
-### Reverting Migrations
+  e2e-tests:
+    needs: integration-tests  # Запускается после integration-tests
+```
 
-\`\`\`bash
+### Конфигурация воркеров
+
+- **Unit tests:** `maxWorkers: 2` (уменьшено с 4 для стабильности в CI)
+- **Integration tests:** `maxWorkers: 1` (последовательно из-за БД)
+- **E2E tests:** `maxWorkers: 1` (последовательно из-за БД)
+
+---
+
+## Отчеты Allure
+
+### Локальная генерация отчетов
+
+```bash
+# Запустить тесты с генерацией отчета
+pnpm test
+
+# Очистить старые отчеты
+pnpm allure:clean
+
+# Сгенерировать отчет из результатов
+pnpm allure:append
+
+# Открыть отчет в браузере
+pnpm allure:show
+```
+
+### Отчеты в CI/CD
+
+После успешного запуска тестов в CI/CD:
+
+1. **Артефакты GitHub Actions:**
+   - Результаты каждого типа тестов доступны как артефакты
+   - Хранятся 30 дней
+
+2. **GitHub Pages (только для main):**
+   - Автоматическая публикация на `https://<username>.github.io/<repo>/`
+   - История последних 20 запусков
+   - Тренды и статистика
+
+### Структура результатов
+
+```
+apps/backend/
+├── allure-results/     # Результаты тестов (JSON)
+├── allure-report/      # HTML-отчет
+└── logs/              # Логи приложения
+    ├── app.log
+    ├── access.log
+    └── error.log
+```
+
+---
+
+## Полезные команды
+
+### Docker-окружение
+
+```bash
+# Пересборка и перезапуск всего окружения
+pnpm docker:local:restart
+
+# Подключиться к контейнеру backend
+docker compose -f docker-compose.local.test.yml exec backend-test sh
+
+# Подключиться к PostgreSQL
+docker compose -f docker-compose.local.test.yml exec postgres-test psql -U test_user -d school_test_db
+
+# Сброс базы данных
+pnpm docker:local:reset-db
+
+# Просмотр использования ресурсов
+docker stats
+```
+
+### Работа с раннерами
+
+```bash
+# Посмотреть список запущенных раннеров
+docker compose -f apps/backend/docker-compose.local.test.yml ps test-runner
+
+# Посмотреть логи конкретного раннера
+docker logs <container_name>
+
+# Подключиться к раннеру
+docker exec -it <container_name> sh
+
+# Остановить конкретный раннер
+docker stop <container_name>
+
+# Удалить все остановленные контейнеры
+docker container prune
+```
+
+### Отладка тестов
+
+```bash
+# Запуск в debug-режиме (с breakpoints)
+pnpm test:debug
+
+# Запуск в watch-режиме (перезапуск при изменениях)
+pnpm test:watch
+
+# Запуск с покрытием кода
+pnpm test:cov
+
+# Запуск тестов в случайном порядке (для выявления зависимостей)
+pnpm test:parallel:random
+pnpm test:sequential:random
+```
+
+### Миграции и сиды
+
+```bash
+# Генерация миграции
+pnpm migration:generate -- src/database/migrations/MigrationName
+
+# Применение миграций
+pnpm migration:run
+
+# Откат последней миграции
 pnpm migration:revert
-\`\`\`
 
-## Seed Data
+# Наполнение БД тестовыми данными
+pnpm seed:run
+```
 
-The seed script runs automatically after migrations. By default, it creates an empty database.
+---
 
-Tests should create their own data via API calls using factories.
+## Рекомендации
 
-## Migration Guide
+### Для локальной разработки
 
-### Converting Old Integration Tests
+1. **Быстрая проверка:** используйте `pnpm test:unit` для быстрой проверки логики
+2. **Полная проверка:** используйте Docker для запуска integration и e2e тестов
+3. **Отладка:** используйте `pnpm test:debug` с breakpoints в IDE
 
-**Before:**
-\`\`\`typescript
-import { Test } from '@nestjs/testing';
-import request from 'supertest';
+### Для CI/CD
 
-let app: INestApplication;
-let dataSource: DataSource;
+1. Тесты запускаются автоматически, не требуют ручного вмешательства
+2. Проверяйте отчеты на GitHub Pages для анализа трендов
+3. При падении тестов смотрите логи в артефактах GitHub Actions
 
-beforeAll(async () => {
-  const module = await Test.createTestingModule({
-    // ...
-  }).compile();
+### Оптимизация производительности
 
-  app = module.createNestApplication();
-  await app.init();
-  dataSource = module.get(DataSource);
-});
+1. **Unit-тесты:** можно увеличить количество воркеров до 4-6 на мощных машинах
+2. **Integration/E2E:** всегда запускайте последовательно для предотвращения конфликтов
+3. **Параллельные раннеры:** используйте для запуска разных типов тестов одновременно
 
-it('test', async () => {
-  await request(app.getHttpServer())
-    .get('/api/endpoint')
-    .expect(200);
-});
-\`\`\`
+---
 
-**After:**
-\`\`\`typescript
-import { ApiTestClient, setupTestClient } from '../../helpers/api-client';
+## Структура тестов
 
-let client: ApiTestClient;
+```
+apps/backend/
+├── src/modules/
+│   ├── auth/
+│   │   └── tests/
+│   │       ├── unit/*.spec.ts
+│   │       ├── integration/*.spec.ts
+│   │       └── e2e/*.spec.ts
+│   ├── courses/
+│   │   └── tests/
+│   │       ├── unit/*.spec.ts
+│   │       ├── integration/*.spec.ts
+│   │       └── e2e/*.spec.ts
+│   └── .../
+├── tests/
+│   ├── scripts/
+│   │   ├── start-runners.sh     # Запуск нескольких раннеров
+│   │   └── run-test.sh          # Запуск тестов на раннере
+│   ├── test_runner/
+│   │   └── Dockerfile           # Dockerfile для test-runner
+│   └── README.md               # Это руководство
+├── configs/
+│   ├── jest.config.ts          # Основная конфигурация Jest
+│   ├── jest-unit.config.ts     # Конфигурация для unit-тестов
+│   ├── jest-integration.config.ts  # Конфигурация для integration
+│   └── jest-e2e.config.ts      # Конфигурация для e2e
+├── docker-compose.test.yml     # Docker Compose для CI/CD
+└── docker-compose.local.test.yml  # Docker Compose для локальной разработки
+```
 
-beforeAll(async () => {
-  client = await setupTestClient();
-});
-
-afterAll(async () => {
-  await teardownTestClient(client);
-});
-
-it('test', async () => {
-  const response = await client.get('/api/endpoint');
-  expect(response.status).toBe(200);
-});
-\`\`\`
-
-### Key Changes
-
-1. ❌ Remove `Test.createTestingModule()`
-2. ❌ Remove `app.getHttpServer()`
-3. ❌ Remove direct database access (repositories)
-4. ✅ Use `ApiTestClient` for HTTP requests
-5. ✅ Create test data via API calls
-6. ✅ Use factories for common objects
-7. ✅ Schema cleanup handled automatically
+---
 
 ## Troubleshooting
 
-### Tests fail with "Cannot connect to backend"
+### Проблема: Тесты падают с таймаутом
 
-Ensure backend-test is running and healthy:
-\`\`\`bash
-docker-compose -f docker-compose.test.yml ps
-docker-compose -f docker-compose.test.yml logs backend-test
-\`\`\`
+```bash
+# Увеличить таймаут в конфигурации Jest или через переменную окружения
+JEST_TIMEOUT=120000 pnpm test:integration
+```
 
-### Migrations fail
+### Проблема: Конфликты БД при параллельном запуске
 
-Check that migrations are properly formatted:
-\`\`\`bash
-docker-compose -f docker-compose.test.yml logs backend-test | grep migration
-\`\`\`
+```bash
+# Запускайте integration и e2e тесты последовательно
+pnpm docker:local:test:integration
+pnpm docker:local:test:e2e
+```
 
-### Schema isolation not working
+### Проблема: Docker контейнеры не запускаются
 
-Verify X-Test-Schema header is being sent:
-- Check test client configuration
-- Verify middleware is applied in app.module.ts
-- Ensure NODE_ENV=test in backend-test
+```bash
+# Проверить логи
+docker compose -f docker-compose.local.test.yml logs
 
-### Tests interfere with each other
+# Пересоздать контейнеры
+pnpm docker:local:down
+pnpm docker:local:build
+pnpm docker:local:up
+```
 
-Ensure each test suite uses its own schema:
-- Each test should call `setupTestClient()` in beforeAll
-- Call `teardownTestClient()` in afterAll
-- Use `resetSchema()` in beforeEach/afterEach if needed
+### Проблема: Out of Memory ошибки
 
-## Environment Variables
+```bash
+# Увеличить лимит памяти для Node.js
+NODE_OPTIONS="--max-old-space-size=4096" pnpm test
+```
 
-### TEST_API_URL
-Base URL for backend API (default: http://backend-test:3000)
+---
 
-### NODE_ENV
-Must be "test" for schema isolation and test endpoints to work
+## Полезные ссылки
 
-### IS_OFFLINE
-- `true`: Unit tests (no database)
-- `false`: Integration tests (with database)
-
-## Best Practices
-
-1. **Always use factories** for creating test data
-2. **Reset schema** between tests to ensure clean state
-3. **Handle authentication** explicitly in tests that need it
-4. **Use descriptive test names** that explain what's being tested
-5. **Test both success and failure cases**
-6. **Verify cleanup** - schemas should be dropped after tests
-7. **Keep tests independent** - don't rely on execution order
-8. **Use meaningful assertions** - check specific values, not just status codes
-
-## Example Test Suite
-
-See `src/modules/courses/tests/integration/courses.controller.http.spec.ts` for a complete example of the new testing approach.
+- [Jest Documentation](https://jestjs.io/docs/getting-started)
+- [Allure Report](https://docs.qameta.io/allure/)
+- [NestJS Testing](https://docs.nestjs.com/fundamentals/testing)
+- [Docker Compose](https://docs.docker.com/compose/)

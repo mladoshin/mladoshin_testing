@@ -65,7 +65,7 @@ services:
 
   # Test runner - can run unit, integration, and e2e tests
   test-runner:
-    container_name: test_runner
+    #container_name: test_runner
     build:
       context: ../..
       dockerfile: apps/backend/tests/test_runner/Dockerfile
