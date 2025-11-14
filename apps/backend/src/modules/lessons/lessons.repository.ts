@@ -1,6 +1,6 @@
 import { Injectable } from '@nestjs/common';
-import { InjectRepository } from '@nestjs/typeorm';
-import { Repository } from 'typeorm';
+import { InjectDataSource, InjectRepository } from '@nestjs/typeorm';
+import { DataSource, Repository } from 'typeorm';
 import { CourseLesson } from './entities/course-lesson.entity';
 import { CreateLessonDto } from './dto/create-lesson.dto';
 import { UpdateLessonDto } from './dto/update-lesson.dto';
@@ -12,16 +12,17 @@ import { CourseLessonDomain } from './domains/lesson.domain';
 import { CourseLessonMapper } from './lessons.mapper';
 
 export interface ICourseLessonRepo {
-  create(createLessonDto: CreateLessonDto): Promise<CourseLessonDomain>;
+  create(createLessonDto: CreateLessonDto, options?: any): Promise<CourseLessonDomain>;
   update(
     id: string,
     updateLessonDto: UpdateLessonDto,
+    options?: any,
   ): Promise<CourseLessonDomain>;
-  delete(id: string): Promise<CourseLessonDomain>;
-  findById(id: string): Promise<CourseLessonDomain | null>;
-  findOrFailById(id: string): Promise<CourseLessonDomain>;
-  findAll(): Promise<CourseLessonDomain[]>;
-  findAllByCourse(courseId: string): Promise<CourseLessonDomain[]>;
+  delete(id: string, options?: any): Promise<CourseLessonDomain>;
+  findById(id: string, options?: any): Promise<CourseLessonDomain | null>;
+  findOrFailById(id: string, options?: any): Promise<CourseLessonDomain>;
+  findAll(options?: any): Promise<CourseLessonDomain[]>;
+  findAllByCourse(courseId: string, options?: any): Promise<CourseLessonDomain[]>;
 }
 
 @Injectable()
@@ -29,7 +30,16 @@ export class CourseLessonRepo implements ICourseLessonRepo {
   public constructor(
     @InjectRepository(CourseLesson)
     private readonly repository: Repository<CourseLesson>,
+    @InjectDataSource() private dataSource: DataSource,
   ) {}
+
+  private async getORMRepository(options?: any) {
+    const entityManager = this.dataSource.createEntityManager();
+    if (options?.schema) {
+      await entityManager.query(`SET search_path TO "${options.schema}"`);
+    }
+    return entityManager.getRepository(CourseLesson);
+  }
 
   async create(createLessonDto: CreateLessonDto) {
     const lesson = this.repository.create(createLessonDto);
@@ -77,8 +87,10 @@ export class CourseLessonRepo implements ICourseLessonRepo {
     );
   }
 
-  async findAllByCourse(courseId: string) {
-    const lessonDBEntities = await this.repository.find({
+  async findAllByCourse(courseId: string, options?: any) {
+    const repository = await this.getORMRepository(options);
+
+    const lessonDBEntities = await repository.find({
       where: { course_id: courseId },
       order: {date: "asc"}
     });

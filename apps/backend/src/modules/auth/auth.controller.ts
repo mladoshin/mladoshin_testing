@@ -8,6 +8,7 @@ import {
   Inject,
   HttpCode,
   Query,
+  Req,
 } from '@nestjs/common';
 import { IAuthService } from './auth.service';
 import { LoginUserDto } from './dto/login.dto';
@@ -32,23 +33,24 @@ export class AuthController {
   async login(
     @Body() loginUserDto: LoginUserDto,
     @Res({ passthrough: true }) res: Response,
+    @Req() req
   ): Promise<AuthResponse> {
-    const tokenPair = await this.authService.login(loginUserDto);
+    const tokenPair = await this.authService.login(loginUserDto, {schema: req.headers['x-test-schema']});
     return AuthResponse.make(tokenPair, res);
   }
 
   @Get('check')
   @AccessLog()
-  async checkUserByEmail(@Query() data: any) {
-    const result = await this.authService.check(data.email as string);
+  async checkUserByEmail(@Query() data: any, @Req() req) {
+    const result = await this.authService.check(data.email as string, {schema: req.headers['x-test-schema']});
     return { result };
   }
 
   @Get('me')
   @AccessLog()
   @UseGuards(JwtAuthGuard)
-  async getMe(@User('id') uid: string) {
-    const user = await this.authService.getMe(uid);
+  async getMe(@User('id') uid: string, @Req() req) {
+    const user = await this.authService.getMe(uid, {schema: req.headers['x-test-schema']});
     return UserResponse.make(user);
   }
 
@@ -57,8 +59,9 @@ export class AuthController {
   async register(
     @Body() registerUserDto: RegisterUserDto,
     @Res({ passthrough: true }) res: Response,
+    @Req() req
   ): Promise<AuthResponse> {
-    const tokenPair = await this.authService.register(registerUserDto);
+    const tokenPair = await this.authService.register(registerUserDto, {schema: req.headers['x-test-schema']});
     return AuthResponse.make(tokenPair, res);
   }
 

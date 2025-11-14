@@ -7,6 +7,7 @@ import {
   Param,
   Delete,
   Inject,
+  Req,
 } from '@nestjs/common';
 import { ILessonsService } from './lessons.service';
 import { CreateLessonDto } from './dto/create-lesson.dto';
@@ -24,22 +25,23 @@ export class LessonsController {
   @AccessLog()
   async create(
     @Body() createLessonDto: CreateLessonDto,
+    @Req() req,
   ): Promise<CourseLessonResponse> {
-    const lesson = await this.lessonsService.create(createLessonDto);
+    const lesson = await this.lessonsService.create(createLessonDto, {schema: req.headers['x-test-schema']});
     return CourseLessonResponse.make(lesson);
   }
 
   @Get()
   @AccessLog()
-  async findAll(): Promise<CourseLessonResponse[]> {
-    const lessons = await this.lessonsService.findAll();
+  async findAll(@Req() req): Promise<CourseLessonResponse[]> {
+    const lessons = await this.lessonsService.findAll({schema: req.headers['x-test-schema']});
     return CourseLessonResponse.collection(lessons);
   }
 
   @Get(':id')
   @AccessLog()
-  async findOne(@Param('id') id: string): Promise<CourseLessonResponse> {
-    const lesson = await this.lessonsService.findOne(id);
+  async findOne(@Param('id') id: string, @Req() req): Promise<CourseLessonResponse> {
+    const lesson = await this.lessonsService.findOne(id, {schema: req.headers['x-test-schema']});
     return CourseLessonResponse.make(lesson);
   }
 
@@ -48,15 +50,16 @@ export class LessonsController {
   async update(
     @Param('id') id: string,
     @Body() updateLessonDto: UpdateLessonDto,
+    @Req() req,
   ): Promise<CourseLessonResponse> {
-    const lesson = await this.lessonsService.update(id, updateLessonDto);
+    const lesson = await this.lessonsService.update(id, updateLessonDto, {schema: req.headers['x-test-schema']});
     return CourseLessonResponse.make(lesson);
   }
 
   @Delete(':id')
   @AccessLog()
-  async remove(@Param('id') id: string): Promise<CourseLessonResponse> {
-    const lesson = await this.lessonsService.remove(id);
+  async remove(@Param('id') id: string, @Req() req): Promise<CourseLessonResponse> {
+    const lesson = await this.lessonsService.remove(id, {schema: req.headers['x-test-schema']});
     return CourseLessonResponse.make(lesson);
   }
 }

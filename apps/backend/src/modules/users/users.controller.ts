@@ -7,6 +7,7 @@ import {
   Param,
   Delete,
   Inject,
+  Req,
 } from '@nestjs/common';
 import { IUsersService } from './users.service';
 import { CreateUserDto } from './dto/create-user.dto';
@@ -20,22 +21,22 @@ export class UsersController {
 
   @Post()
   @AccessLog()
-  async create(@Body() createUserDto: CreateUserDto): Promise<UserResponse> {
-    const user = await this.usersService.create(createUserDto);
+  async create(@Body() createUserDto: CreateUserDto, @Req() req): Promise<UserResponse> {
+    const user = await this.usersService.create(createUserDto, {schema: req.headers['x-test-schema']});
     return UserResponse.make(user);
   }
 
   @Get()
   @AccessLog()
-  async findAll(): Promise<UserResponse[]> {
-    const users = await this.usersService.findAll();
+  async findAll(@Req() req): Promise<UserResponse[]> {
+    const users = await this.usersService.findAll({schema: req.headers['x-test-schema']});
     return UserResponse.collection(users);
   }
 
   @Get(':id')
   @AccessLog()
-  async findOne(@Param('id') id: string): Promise<UserResponse> {
-    const user = await this.usersService.findOne(id);
+  async findOne(@Param('id') id: string, @Req() req): Promise<UserResponse> {
+    const user = await this.usersService.findOne(id, {schema: req.headers['x-test-schema']});
     return UserResponse.make(user);
   }
 
@@ -44,15 +45,16 @@ export class UsersController {
   async update(
     @Param('id') id: string,
     @Body() updateUserDto: UpdateUserDto,
+    @Req() req,
   ): Promise<UserResponse> {
-    const user = await this.usersService.update(id, updateUserDto);
+    const user = await this.usersService.update(id, updateUserDto, {schema: req.headers['x-test-schema']});
     return UserResponse.make(user);
   }
 
   @Delete(':id')
   @AccessLog()
-  async remove(@Param('id') id: string): Promise<UserResponse> {
-    const user = await this.usersService.remove(id);
+  async remove(@Param('id') id: string, @Req() req): Promise<UserResponse> {
+    const user = await this.usersService.remove(id, {schema: req.headers['x-test-schema']});
     return UserResponse.make(user);
   }
 }

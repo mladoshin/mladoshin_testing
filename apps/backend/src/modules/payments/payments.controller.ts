@@ -7,6 +7,7 @@ import {
   Param,
   Delete,
   Inject,
+  Req,
 } from '@nestjs/common';
 import { IPaymentsService } from './payments.service';
 import { CreatePaymentDto } from './dto/create-payment.dto';
@@ -25,22 +26,23 @@ export class PaymentsController {
   @AccessLog()
   async create(
     @Body() createPaymentDto: CreatePaymentDto,
+    @Req() req,
   ): Promise<PaymentResponse> {
-    const payment = await this.paymentsService.create(createPaymentDto);
+    const payment = await this.paymentsService.create(createPaymentDto, {schema: req.headers['x-test-schema']});
     return PaymentResponse.make(payment);
   }
 
   @Get()
   @AccessLog()
-  async findAll(): Promise<PaymentResponse[]> {
-    const payments = await this.paymentsService.findAll();
+  async findAll(@Req() req): Promise<PaymentResponse[]> {
+    const payments = await this.paymentsService.findAll({schema: req.headers['x-test-schema']});
     return PaymentResponse.collection(payments);
   }
 
   @Get(':id')
   @AccessLog()
-  async findOne(@Param('id') id: string): Promise<PaymentResponse> {
-    const payment = await this.paymentsService.findOne(id);
+  async findOne(@Param('id') id: string, @Req() req): Promise<PaymentResponse> {
+    const payment = await this.paymentsService.findOne(id, {schema: req.headers['x-test-schema']});
     return PaymentResponse.make(payment);
   }
 
@@ -49,15 +51,16 @@ export class PaymentsController {
   async update(
     @Param('id') id: string,
     @Body() updatePaymentDto: UpdatePaymentDto,
+    @Req() req,
   ): Promise<PaymentResponse> {
-    const payment = await this.paymentsService.update(id, updatePaymentDto);
+    const payment = await this.paymentsService.update(id, updatePaymentDto, {schema: req.headers['x-test-schema']});
     return PaymentResponse.make(payment);
   }
 
   @Delete(':id')
   @AccessLog()
-  async remove(@Param('id') id: string): Promise<PaymentResponse> {
-    const payment = await this.paymentsService.remove(id);
+  async remove(@Param('id') id: string, @Req() req): Promise<PaymentResponse> {
+    const payment = await this.paymentsService.remove(id, {schema: req.headers['x-test-schema']});
     return PaymentResponse.make(payment);
   }
 }

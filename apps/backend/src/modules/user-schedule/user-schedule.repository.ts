@@ -14,16 +14,18 @@ import { Course } from '../courses/entities/course.entity';
 import { CreateUserScheduleDto } from './dto/create-user-schedule.dto';
 
 export interface IUserScheduleRepo {
-  generate(userId: string, courseId: string): Promise<UserScheduleDomain[]>;
+  generate(userId: string, courseId: string, options?: any): Promise<UserScheduleDomain[]>;
   create(
     userId: string,
     dataItems: CreateUserScheduleDto[],
+    options?: any,
   ): Promise<UserScheduleDomain[]>;
   getByUserAndCourse(
     userId: string,
     courseId: string,
+    options?: any,
   ): Promise<UserScheduleDomain[]>;
-  deleteByUserAndCourse(userId: string, courseId: string): Promise<boolean>;
+  deleteByUserAndCourse(userId: string, courseId: string, options?: any): Promise<boolean>;
 }
 
 @Injectable()
@@ -39,18 +41,34 @@ export class UserScheduleRepo implements IUserScheduleRepo {
     // ).then((res) => console.log(res));
   }
 
+  private async getORMRepository(options?: any) {
+    const entityManager = this.dataSource.createEntityManager();
+    if (options?.schema) {
+      await entityManager.query(`SET search_path TO "${options.schema}"`);
+    }
+    return {
+      userScheduleRepository: entityManager.getRepository(UserSchedule),
+      courseRepository: entityManager.getRepository(Course),
+    };
+  }
+
   async generate(
     userId: string,
     courseId: string,
+    options?: any,
   ): Promise<UserScheduleDomain[]> {
-    const doesCourseExist = await this.dataSource
-      .getRepository(Course)
-      .existsBy({ id: courseId });
+    const { courseRepository } = await this.getORMRepository(options);
+    const entityManager = this.dataSource.createEntityManager();
+    if (options?.schema) {
+      await entityManager.query(`SET search_path TO "${options.schema}"`);
+    }
+
+    const doesCourseExist = await courseRepository.existsBy({ id: courseId });
     if (!doesCourseExist) {
       throw new RepositoryNotFoundError('Такого курса нет.', Course.name);
     }
     const result: GenerateUserScheduleResponseDto[] =
-      await this.dataSource.query(
+      await entityManager.query(
         `SELECT *, l.title, l.date, l.duration FROM pick_student_schedule($1::uuid, $2::uuid) as s
         JOIN course_lesson l ON l.id = s.lesson_id;`,
         [userId, courseId],
@@ -63,15 +81,16 @@ export class UserScheduleRepo implements IUserScheduleRepo {
   async getByUserAndCourse(
     userId: string,
     courseId: string,
+    options?: any,
   ): Promise<UserScheduleDomain[]> {
-    const doesCourseExist = await this.dataSource
-      .getRepository(Course)
-      .existsBy({ id: courseId });
+    const { courseRepository, userScheduleRepository } = await this.getORMRepository(options);
+
+    const doesCourseExist = await courseRepository.existsBy({ id: courseId });
     if (!doesCourseExist) {
       throw new RepositoryNotFoundError('Такого курса нет.', Course.name);
     }
 
-    const rawEntities = await this.repository.find({
+    const rawEntities = await userScheduleRepository.find({
       where: { user_id: userId, course_id: courseId },
       order: { scheduled_date: 'ASC', start_time: 'asc' },
       relations: { lesson: true },
@@ -89,15 +108,16 @@ export class UserScheduleRepo implements IUserScheduleRepo {
   async deleteByUserAndCourse(
     userId: string,
     courseId: string,
+    options?: any,
   ): Promise<boolean> {
-    const doesCourseExist = await this.dataSource
-      .getRepository(Course)
-      .existsBy({ id: courseId });
+    const { courseRepository, userScheduleRepository } = await this.getORMRepository(options);
+
+    const doesCourseExist = await courseRepository.existsBy({ id: courseId });
     if (!doesCourseExist) {
       throw new RepositoryNotFoundError('Такого курса нет.', Course.name);
     }
 
-    await this.repository.delete({
+    await userScheduleRepository.delete({
       course_id: courseId,
       user_id: userId,
     });
@@ -108,13 +128,16 @@ export class UserScheduleRepo implements IUserScheduleRepo {
   async create(
     userId: string,
     dataItems: CreateUserScheduleDto[],
+    options?: any,
   ): Promise<UserScheduleDomain[]> {
-    const entities = this.repository.create(
+    const { userScheduleRepository } = await this.getORMRepository(options);
+
+    const entities = userScheduleRepository.create(
       dataItems.map((di) => ({ ...di, user_id: userId })),
     );
-    const rawEntities = await this.repository.save(entities);
+    const rawEntities = await userScheduleRepository.save(entities);
     const ids = rawEntities.map((e) => e.id);
-    const entitiesWithLessons = await this.repository.find({
+    const entitiesWithLessons = await userScheduleRepository.find({
       where: { id: In(ids) },
       relations: { lesson: true },
     });

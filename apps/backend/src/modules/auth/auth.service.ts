@@ -20,11 +20,11 @@ import { UserDomain } from '../users/domains/user.domain';
 
 export interface IAuthService {
   createTokenPair(user: UserDomain): TokenPair;
-  login(loginUserDto: LoginUserDto): Promise<TokenPair>;
-  register(registerUserDto: RegisterUserDto): Promise<TokenPair>;
+  login(loginUserDto: LoginUserDto, options?: any): Promise<TokenPair>;
+  register(registerUserDto: RegisterUserDto, options?: any): Promise<TokenPair>;
   logout(): string;
-  getMe(userId: string): Promise<UserDomain>;
-  check(email: string): Promise<boolean>;
+  getMe(userId: string, options?: any): Promise<UserDomain>;
+  check(email: string, options?: any): Promise<boolean>;
 }
 
 @Injectable()
@@ -44,8 +44,8 @@ export class AuthService implements IAuthService {
     return { accessToken, refreshToken };
   }
 
-  async login(loginUserDto: LoginUserDto) {
-    const user = await this.userRepository.findByEmail(loginUserDto.email);
+  async login(loginUserDto: LoginUserDto, options?: any) {
+    const user = await this.userRepository.findByEmail(loginUserDto.email, options);
     if (!user) {
       throw new UnauthorizedException(
         'Пользователь с таким логином не найден.',
@@ -65,8 +65,8 @@ export class AuthService implements IAuthService {
     return this.createTokenPair(user);
   }
 
-  async register(registerUserDto: RegisterUserDto) {
-    let user = await this.userRepository.findByEmail(registerUserDto.email);
+  async register(registerUserDto: RegisterUserDto, options?: any) {
+    let user = await this.userRepository.findByEmail(registerUserDto.email, options);
     if (user) {
       throw new ConflictException(
         'Пользователь с таким логином уже существует.',
@@ -76,7 +76,7 @@ export class AuthService implements IAuthService {
       registerUserDto.password,
     );
     const userData = { ...registerUserDto, password: hashedPassword };
-    user = await this.userRepository.create(userData);
+    user = await this.userRepository.create(userData, options);
     return this.createTokenPair(user);
   }
 
@@ -84,16 +84,16 @@ export class AuthService implements IAuthService {
     return `This action returns auth`;
   }
 
-  getMe(userId: string) {
+  getMe(userId: string, options?: any) {
     try {
-      return this.userRepository.findOrFailById(userId);
+      return this.userRepository.findOrFailById(userId, options);
     } catch (err) {
       throw err;
     }
   }
 
-  async check(email: string) {
-    const user = await this.userRepository.findByEmail(email);
+  async check(email: string, options?: any) {
+    const user = await this.userRepository.findByEmail(email, options);
     return !!user;
   }
 }

@@ -10,6 +10,7 @@ import {
   Inject,
   UseGuards,
   Query,
+  Req,
 } from '@nestjs/common';
 import { CreateUserAvailabilityDto } from './dto/create-user-availability.dto';
 import { UpdateUserAvailabilityDto } from './dto/update-user-availability.dto';
@@ -33,9 +34,10 @@ export class UserAvailabilityController {
   async create(
     @User() user: JWTPayload,
     @Body() dto: CreateUserAvailabilityDto,
+    @Req() req,
   ) {
     try {
-      const result = await this.service.create(user, dto);
+      const result = await this.service.create(user, dto, {schema: req.headers['x-test-schema']});
       return UserAvailabilityResponse.make(result);
     } catch (err) {
       throw ErrorMapper.mapToHTTPError(err);
@@ -46,9 +48,10 @@ export class UserAvailabilityController {
   async findAll(
     @User() user: JWTPayload,
     @Query() query: GetUserAvailabilitiesQueryDto,
+    @Req() req,
   ) {
     try {
-      const results = await this.service.findByUserAndCourse(user, query);
+      const results = await this.service.findByUserAndCourse(user, query, {schema: req.headers['x-test-schema']});
       return UserAvailabilityResponse.collection(results);
     } catch (err) {
       throw ErrorMapper.mapToHTTPError(err);
@@ -56,9 +59,9 @@ export class UserAvailabilityController {
   }
 
   @Get(':id')
-  async findOne(@Param('id') id: string) {
+  async findOne(@Param('id') id: string, @Req() req) {
     try {
-      const result = await this.service.findById(id);
+      const result = await this.service.findById(id, {schema: req.headers['x-test-schema']});
       if (!result) throw new RepositoryNotFoundError('UserAvailability not found', 'UserAvailability');
       return UserAvailabilityResponse.make(result);
     } catch (err) {
@@ -70,9 +73,10 @@ export class UserAvailabilityController {
   async update(
     @Param('id') id: string,
     @Body() dto: UpdateUserAvailabilityDto,
+    @Req() req,
   ) {
     try {
-      const result = await this.service.update(id, dto);
+      const result = await this.service.update(id, dto, {schema: req.headers['x-test-schema']});
       return UserAvailabilityResponse.make(result);
     } catch (err) {
       throw ErrorMapper.mapToHTTPError(err);
@@ -80,9 +84,9 @@ export class UserAvailabilityController {
   }
 
   @Delete(':id')
-  async remove(@Param('id') id: string) {
+  async remove(@Param('id') id: string, @Req() req) {
     try {
-      const result = await this.service.delete(id);
+      const result = await this.service.delete(id, {schema: req.headers['x-test-schema']});
       return UserAvailabilityResponse.make(result);
     } catch (err) {
       throw ErrorMapper.mapToHTTPError(err);

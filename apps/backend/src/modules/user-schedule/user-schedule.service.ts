@@ -12,18 +12,22 @@ export interface IUserScheduleService {
   generate(
     user: JWTPayload,
     data: GenerateUserScheduleDto,
+    options?: any,
   ): Promise<UserScheduleDomain[]>;
   create(
     user: JWTPayload,
     data: CreateUserScheduleArrayDto,
+    options?: any,
   ): Promise<UserScheduleDomain[]>;
   getByUserAndCourse(
     user: JWTPayload,
     query: GetUserScheduleQueryDto,
+    options?: any,
   ): Promise<UserScheduleDomain[]>;
   deleteByUserAndCourse(
     user: JWTPayload,
     query: DeleteUserScheduleQueryDto,
+    options?: any,
   ): Promise<boolean>;
 }
 
@@ -34,29 +38,30 @@ export class UserScheduleService implements IUserScheduleService {
     private readonly repo: IUserScheduleRepo,
   ) {}
 
-  async generate(user: JWTPayload, data: GenerateUserScheduleDto) {
+  async generate(user: JWTPayload, data: GenerateUserScheduleDto, options?: any) {
     try {
-      const entities = await this.repo.generate(user.id, data.course_id);
+      const entities = await this.repo.generate(user.id, data.course_id, options);
       return entities;
     } catch (err) {
       throw ErrorMapper.mapToHTTPError(err);
     }
   }
 
-  async create(user: JWTPayload, data: CreateUserScheduleArrayDto) {
+  async create(user: JWTPayload, data: CreateUserScheduleArrayDto, options?: any) {
     try {
-      const entities = await this.repo.create(user.id, data.data);
+      const entities = await this.repo.create(user.id, data.data, options);
       return entities;
     } catch (err) {
       throw ErrorMapper.mapToHTTPError(err);
     }
   }
 
-  async getByUserAndCourse(user: JWTPayload, query: GetUserScheduleQueryDto) {
+  async getByUserAndCourse(user: JWTPayload, query: GetUserScheduleQueryDto, options?: any) {
     try {
       const entities = await this.repo.getByUserAndCourse(
         user.id,
         query.course_id,
+        options,
       );
       return entities;
     } catch (err) {
@@ -67,11 +72,13 @@ export class UserScheduleService implements IUserScheduleService {
   async deleteByUserAndCourse(
     user: JWTPayload,
     query: DeleteUserScheduleQueryDto,
+    options?: any,
   ) {
     try {
       const result = await this.repo.deleteByUserAndCourse(
         user.id,
         query.course_id,
+        options,
       );
       return result;
     } catch (err) {

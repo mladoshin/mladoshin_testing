@@ -1,6 +1,6 @@
-import { Injectable } from '@nestjs/common';
+import { Inject, Injectable } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
-import { Repository } from 'typeorm';
+import { DataSource, Repository } from 'typeorm';
 import {
   RepositoryNotFoundError,
   RepositoryUnknownError,
@@ -15,19 +15,22 @@ export interface IUserAvailabilityRepo {
   create(
     userId: string,
     dto: CreateUserAvailabilityDto,
+    options?: any,
   ): Promise<UserAvailabilityDomain>;
   update(
     id: string,
     dto: UpdateUserAvailabilityDto,
+    options?: any,
   ): Promise<UserAvailabilityDomain>;
-  delete(id: string): Promise<UserAvailabilityDomain>;
-  findById(id: string): Promise<UserAvailabilityDomain | null>;
-  findOrFailById(id: string): Promise<UserAvailabilityDomain>;
+  delete(id: string, options?: any): Promise<UserAvailabilityDomain>;
+  findById(id: string, options?: any): Promise<UserAvailabilityDomain | null>;
+  findOrFailById(id: string, options?: any): Promise<UserAvailabilityDomain>;
   findAllByUserAndCourse(
     userId: string,
     courseId: string,
+    options?: any,
   ): Promise<UserAvailabilityDomain[]>;
-  findAll(): Promise<UserAvailabilityDomain[]>;
+  findAll(options?: any): Promise<UserAvailabilityDomain[]>;
 }
 
 @Injectable()
@@ -35,55 +38,69 @@ export class UserAvailabilityRepo implements IUserAvailabilityRepo {
   constructor(
     @InjectRepository(UserAvailability)
     private readonly repository: Repository<UserAvailability>,
+    @Inject(DataSource) private readonly dataSource: DataSource,
   ) {}
 
-  async create(userId: string, dto: CreateUserAvailabilityDto) {
-    const entity = this.repository.create({
+  private async getORMRepository(options?: any) {
+    const entityManager = this.dataSource.createEntityManager();
+    if (options?.schema) {
+      await entityManager.query(`SET search_path TO "${options.schema}"`);
+    }
+    return entityManager.getRepository(UserAvailability);
+  }
+
+  async create(userId: string, dto: CreateUserAvailabilityDto, options?: any) {
+    const repository = await this.getORMRepository(options);
+    const entity = repository.create({
       user_id: userId,
       ...dto,
     });
 
     try {
-      const saved = await this.repository.save(entity);
+      const saved = await repository.save(entity);
       return UserAvailabilityMapper.toDomainEntity(saved);
     } catch (err) {
       throw new RepositoryUnknownError(err.message, UserAvailabilityRepo.name);
     }
   }
 
-  async update(id: string, dto: UpdateUserAvailabilityDto) {
-    const existing = await this.findOrFailById(id);
-    const merged = this.repository.merge(existing as UserAvailability, dto);
+  async update(id: string, dto: UpdateUserAvailabilityDto, options?: any) {
+    const repository = await this.getORMRepository(options);
+    const existing = await this.findOrFailById(id, options);
+    const merged = repository.merge(existing as UserAvailability, dto);
 
     try {
-      const updated = await this.repository.save(merged);
+      const updated = await repository.save(merged);
       return UserAvailabilityMapper.toDomainEntity(updated);
     } catch (err) {
       throw new RepositoryUnknownError(err.message, UserAvailabilityRepo.name);
     }
   }
 
-  async delete(id: string) {
-    const entity = await this.findOrFailById(id);
+  async delete(id: string, options?: any) {
+    const repository = await this.getORMRepository(options);
+    const entity = await this.findOrFailById(id, options);
     const backup = { ...entity };
     try {
-      await this.repository.remove(entity as UserAvailability);
+      await repository.remove(entity as UserAvailability);
     } catch (err) {
       throw new RepositoryUnknownError(err.message, UserAvailabilityRepo.name);
     }
     return backup;
   }
 
-  async findById(id: string) {
-    const found = await this.repository.findOne({
+  async findById(id: string, options?: any) {
+    const repository = await this.getORMRepository(options);
+    const found = await repository.findOne({
       where: { id },
       relations: { user: true, course: true },
     });
     return found ? UserAvailabilityMapper.toDomainEntity(found) : null;
   }
 
-  async findOrFailById(id: string) {
-    const found = await this.repository.findOne({
+  async findOrFailById(id: string, options?: any) {
+    const repository = await this.getORMRepository(options);
+    const found = await repository.findOne({
       where: { id },
       relations: { user: true, course: true },
     });
@@ -96,16 +113,18 @@ export class UserAvailabilityRepo implements IUserAvailabilityRepo {
     return UserAvailabilityMapper.toDomainEntity(found);
   }
 
-  async findAllByUserAndCourse(userId: string, courseId: string) {
-    const items = await this.repository.find({
+  async findAllByUserAndCourse(userId: string, courseId: string, options?: any) {
+    const repository = await this.getORMRepository(options);
+    const items = await repository.find({
       where: { user_id: userId, course_id: courseId },
       relations: { user: true, course: true },
     });
     return items.map(UserAvailabilityMapper.toDomainEntity);
   }
 
-  async findAll() {
-    const items = await this.repository.find({
+  async findAll(options?: any) {
+    const repository = await this.getORMRepository(options);
+    const items = await repository.find({
       relations: { user: true, course: true },
     });
     return items.map(UserAvailabilityMapper.toDomainEntity);

@@ -1,14 +1,12 @@
 import { Injectable } from '@nestjs/common';
-import { InjectRepository } from '@nestjs/typeorm';
-import { Repository } from 'typeorm';
+import { InjectDataSource } from '@nestjs/typeorm';
+import { DataSource } from 'typeorm';
 import { Course } from '../courses/entities/course.entity';
-import { CreateCourseDto } from '../courses/dto/create-course.dto';
 import {
   RepositoryDuplicateError,
   RepositoryNotFoundError,
   RepositoryUnknownError,
 } from 'src/common/errors/db-errors';
-import { UpdateCourseDto } from '../courses/dto/update-course.dto';
 import { CourseEnrollment } from './entities/course-enrollment.entity';
 import { CourseEnrollmentStatus } from './types/course-enrollments.types';
 import { User } from '../users/entities/user.entity';
@@ -20,40 +18,52 @@ export interface ICourseEnrollmentRepo {
     userId: string,
     courseId: string,
     status: CourseEnrollmentStatus,
+    options?: any,
   ): Promise<CourseEnrollmentDomain>;
   registerUser(
     userId: string,
     courseId: string,
+    options?: any,
   ): Promise<CourseEnrollmentDomain>;
   findOneByUserAndCourse(
     userId: string,
     courseId: string,
+    options?: any,
   ): Promise<CourseEnrollmentDomain | null>;
-  existsByUserAndCourse(userId: string, courseId: string): Promise<boolean>;
-  findManyByUser(userId: string): Promise<CourseEnrollmentDomain[]>;
-  findManyByCourse(courseId: string): Promise<CourseEnrollmentDomain[]>;
-  findOneById(id: string): Promise<CourseEnrollmentDomain>;
+  existsByUserAndCourse(userId: string, courseId: string, options?: any): Promise<boolean>;
+  findManyByUser(userId: string, options?: any): Promise<CourseEnrollmentDomain[]>;
+  findManyByCourse(courseId: string, options?: any): Promise<CourseEnrollmentDomain[]>;
+  findOneById(id: string, options?: any): Promise<CourseEnrollmentDomain>;
 }
 
 @Injectable()
 export class CourseEnrollmentRepo implements ICourseEnrollmentRepo {
   public constructor(
-    @InjectRepository(CourseEnrollment)
-    private readonly repository: Repository<CourseEnrollment>,
-    @InjectRepository(Course)
-    private readonly courseRepository: Repository<Course>,
-    @InjectRepository(User)
-    private readonly userRepository: Repository<User>,
+    @InjectDataSource() private dataSource: DataSource,
   ) {}
+
+  private async getORMRepository(options?: any) {
+    const entityManager = this.dataSource.createEntityManager();
+    if (options?.schema) {
+      await entityManager.query(`SET search_path TO "${options.schema}"`);
+    }
+    return {
+      enrollmentRepository: entityManager.getRepository(CourseEnrollment),
+      userRepository: entityManager.getRepository(User),
+      courseRepository: entityManager.getRepository(Course),
+    };
+  }
 
   async setStatus(
     userId: string,
     courseId: string,
     status: CourseEnrollmentStatus,
+    options?: any,
   ) {
     const courseEnrollmentDomain = await this.findOneByUserAndCourse(
       userId,
       courseId,
+      options,
     );
     if (!courseEnrollmentDomain) {
       throw new RepositoryNotFoundError(
@@ -62,8 +72,11 @@ export class CourseEnrollmentRepo implements ICourseEnrollmentRepo {
       );
     }
     courseEnrollmentDomain.status = status;
+
+    const { enrollmentRepository } = await this.getORMRepository(options);
+
     try {
-      await this.repository.save(CourseEnrollementMapper.toDatabaseEntity(courseEnrollmentDomain));
+      await enrollmentRepository.save(CourseEnrollementMapper.toDatabaseEntity(courseEnrollmentDomain));
       return courseEnrollmentDomain;
     } catch (err) {
       throw new RepositoryUnknownError(err.message, CourseEnrollmentRepo.name);
@@ -73,29 +86,32 @@ export class CourseEnrollmentRepo implements ICourseEnrollmentRepo {
   async registerUser(
     userId: string,
     courseId: string,
+    options?: any,
   ): Promise<CourseEnrollmentDomain> {
-    if ((await this.userRepository.existsBy({ id: userId })) === false) {
+    const { enrollmentRepository, userRepository, courseRepository } = await this.getORMRepository(options);
+
+    if ((await userRepository.existsBy({ id: userId })) === false) {
       throw new RepositoryNotFoundError('Пользователь не найден.', User.name);
     }
-    if ((await this.courseRepository.existsBy({ id: courseId })) === false) {
+    if ((await courseRepository.existsBy({ id: courseId })) === false) {
       throw new RepositoryNotFoundError('Курс не найден.', Course.name);
     }
 
-    if (await this.existsByUserAndCourse(userId, courseId)) {
+    if (await this.existsByUserAndCourse(userId, courseId, options)) {
       throw new RepositoryDuplicateError(
         'Пользователь уже зарегистрирован на курсе.',
         Course.name,
       );
     }
 
-    const courseEnrollment = this.repository.create({
+    const courseEnrollment = enrollmentRepository.create({
       user_id: userId,
       course_id: courseId,
       status: CourseEnrollmentStatus.NEW,
     });
 
     try {
-      const result = await this.repository.save(courseEnrollment);
+      const result = await enrollmentRepository.save(courseEnrollment);
       return result;
     } catch (err) {
       throw new RepositoryUnknownError(err.message, CourseEnrollmentRepo.name);
@@ -105,8 +121,11 @@ export class CourseEnrollmentRepo implements ICourseEnrollmentRepo {
   async findOneByUserAndCourse(
     userId: string,
     courseId: string,
+    options?: any,
   ): Promise<CourseEnrollmentDomain | null> {
-    const courseEnrollmentDBEntity = await this.repository.findOne({
+    const { enrollmentRepository } = await this.getORMRepository(options);
+
+    const courseEnrollmentDBEntity = await enrollmentRepository.findOne({
       where: {
         user_id: userId,
         course_id: courseId,
@@ -124,8 +143,11 @@ export class CourseEnrollmentRepo implements ICourseEnrollmentRepo {
   async existsByUserAndCourse(
     userId: string,
     courseId: string,
+    options?: any,
   ): Promise<boolean> {
-    return this.repository.exists({
+    const { enrollmentRepository } = await this.getORMRepository(options);
+
+    return enrollmentRepository.exists({
       where: {
         user_id: userId,
         course_id: courseId,
@@ -137,11 +159,13 @@ export class CourseEnrollmentRepo implements ICourseEnrollmentRepo {
     });
   }
 
-  async findManyByUser(userId: string): Promise<CourseEnrollmentDomain[]> {
-    if ((await this.userRepository.existsBy({ id: userId })) === false) {
+  async findManyByUser(userId: string, options?: any): Promise<CourseEnrollmentDomain[]> {
+    const { enrollmentRepository, userRepository } = await this.getORMRepository(options);
+
+    if ((await userRepository.existsBy({ id: userId })) === false) {
       throw new RepositoryNotFoundError('Пользователь не найден.', User.name);
     }
-    const courseEnrollmentDBEntities = await this.repository.find({
+    const courseEnrollmentDBEntities = await enrollmentRepository.find({
       where: {
         user_id: userId,
       },
@@ -155,11 +179,13 @@ export class CourseEnrollmentRepo implements ICourseEnrollmentRepo {
     );
   }
 
-  async findManyByCourse(courseId: string): Promise<CourseEnrollmentDomain[]> {
-    if ((await this.courseRepository.existsBy({ id: courseId })) === false) {
+  async findManyByCourse(courseId: string, options?: any): Promise<CourseEnrollmentDomain[]> {
+    const { enrollmentRepository, courseRepository } = await this.getORMRepository(options);
+
+    if ((await courseRepository.existsBy({ id: courseId })) === false) {
       throw new RepositoryNotFoundError('Курс не найден.', Course.name);
     }
-    const courseEnrollmentDBEntities = await this.repository.find({
+    const courseEnrollmentDBEntities = await enrollmentRepository.find({
       where: {
         course_id: courseId,
       },
@@ -170,7 +196,7 @@ export class CourseEnrollmentRepo implements ICourseEnrollmentRepo {
 
     return courseEnrollmentDBEntities.map((courseEnrollmentDBEntity) =>
       CourseEnrollementMapper.toDomainEntity(courseEnrollmentDBEntity),
-    ); 
+    );
   }
 
   // async update(id: string, updateCourseDto: UpdateCourseDto) {
@@ -180,8 +206,10 @@ export class CourseEnrollmentRepo implements ICourseEnrollmentRepo {
   //   return course;
   // }
 
-  async findOneById(id: string): Promise<CourseEnrollmentDomain> {
-    const courseEnrollmentDBEntity = await this.repository.findOne({
+  async findOneById(id: string, options?: any): Promise<CourseEnrollmentDomain> {
+    const { enrollmentRepository } = await this.getORMRepository(options);
+
+    const courseEnrollmentDBEntity = await enrollmentRepository.findOne({
       where: { id },
       relations: {
         user: true,

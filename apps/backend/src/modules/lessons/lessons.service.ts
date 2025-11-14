@@ -12,11 +12,11 @@ import { CourseLesson } from './entities/course-lesson.entity';
 import { CourseLessonDomain } from './domains/lesson.domain';
 
 export interface ILessonsService {
-  create(createLessonDto: CreateLessonDto): Promise<CourseLessonDomain>;
-  findAll(): Promise<CourseLessonDomain[]>;
-  findOne(id: string): Promise<CourseLessonDomain>;
-  update(id: string, updateLessonDto: UpdateLessonDto): Promise<CourseLessonDomain>;
-  remove(id: string): Promise<CourseLessonDomain>;
+  create(createLessonDto: CreateLessonDto, options?: any): Promise<CourseLessonDomain>;
+  findAll(options?: any): Promise<CourseLessonDomain[]>;
+  findOne(id: string, options?: any): Promise<CourseLessonDomain>;
+  update(id: string, updateLessonDto: UpdateLessonDto, options?: any): Promise<CourseLessonDomain>;
+  remove(id: string, options?: any): Promise<CourseLessonDomain>;
 }
 
 @Injectable()
@@ -26,17 +26,17 @@ export class LessonsService implements ILessonsService{
     private readonly courseLessonRepository: ICourseLessonRepo,
   ) {}
 
-  create(createLessonDto: CreateLessonDto): Promise<CourseLessonDomain> {
-    return this.courseLessonRepository.create(createLessonDto);
+  create(createLessonDto: CreateLessonDto, options?: any): Promise<CourseLessonDomain> {
+    return this.courseLessonRepository.create(createLessonDto, options);
   }
 
-  findAll(): Promise<CourseLessonDomain[]> {
-    return this.courseLessonRepository.findAll();
+  findAll(options?: any): Promise<CourseLessonDomain[]> {
+    return this.courseLessonRepository.findAll(options);
   }
 
-  findOne(id: string): Promise<CourseLessonDomain> {
+  findOne(id: string, options?: any): Promise<CourseLessonDomain> {
     try {
-      return this.courseLessonRepository.findOrFailById(id);
+      return this.courseLessonRepository.findOrFailById(id, options);
     } catch (err) {
       if (err instanceof RepositoryNotFoundError) {
         throw new NotFoundException(err.message);
@@ -45,9 +45,9 @@ export class LessonsService implements ILessonsService{
     }
   }
 
-  update(id: string, updateLessonDto: UpdateLessonDto): Promise<CourseLessonDomain> {
+  update(id: string, updateLessonDto: UpdateLessonDto, options?: any): Promise<CourseLessonDomain> {
     try {
-      return this.courseLessonRepository.update(id, updateLessonDto);
+      return this.courseLessonRepository.update(id, updateLessonDto, options);
     } catch (err) {
       if (err instanceof RepositoryNotFoundError) {
         throw new NotFoundException(err.message);
@@ -56,9 +56,9 @@ export class LessonsService implements ILessonsService{
     }
   }
 
-  remove(id: string): Promise<CourseLessonDomain> {
+  remove(id: string, options?: any): Promise<CourseLessonDomain> {
     try {
-      return this.courseLessonRepository.delete(id);
+      return this.courseLessonRepository.delete(id, options);
     } catch (err) {
       if (err instanceof RepositoryNotFoundError) {
         throw new NotFoundException(err.message);

@@ -10,17 +10,20 @@ export interface IUserAvailabilityService {
   create(
     user: JWTPayload,
     data: CreateUserAvailabilityDto,
+    options?: any,
   ): Promise<UserAvailabilityDomain>;
   findByUserAndCourse(
     user: JWTPayload,
     query: GetUserAvailabilitiesQueryDto,
+    options?: any,
   ): Promise<UserAvailabilityDomain[]>;
-  findById(id: string): Promise<UserAvailabilityDomain | null>;
+  findById(id: string, options?: any): Promise<UserAvailabilityDomain | null>;
   update(
     id: string,
     data: UpdateUserAvailabilityDto,
+    options?: any,
   ): Promise<UserAvailabilityDomain>;
-  delete(id: string): Promise<UserAvailabilityDomain>;
+  delete(id: string, options?: any): Promise<UserAvailabilityDomain>;
 }
 
 @Injectable()
@@ -30,34 +33,36 @@ export class UserAvailabilityService implements IUserAvailabilityService {
     private readonly repo: IUserAvailabilityRepo,
   ) {}
 
-  async create(user: JWTPayload, data: CreateUserAvailabilityDto) {
-    const entities = await this.repo.create(user.id, data);
+  async create(user: JWTPayload, data: CreateUserAvailabilityDto, options?: any) {
+    const entities = await this.repo.create(user.id, data, options);
     return entities;
   }
 
   async findByUserAndCourse(
     user: JWTPayload,
     query: GetUserAvailabilitiesQueryDto,
+    options?: any,
   ) {
     const entities = await this.repo.findAllByUserAndCourse(
       user.id,
       query.course_id,
+      options,
     );
     return entities;
   }
 
-  async findById(id: string) {
-    const entity = await this.repo.findById(id);
+  async findById(id: string, options?: any) {
+    const entity = await this.repo.findById(id, options);
     return entity;
   }
 
-  async update(id: string, data: UpdateUserAvailabilityDto) {
-    const entity = await this.repo.update(id, data);
+  async update(id: string, data: UpdateUserAvailabilityDto, options?: any) {
+    const entity = await this.repo.update(id, data, options);
     return entity;
   }
 
-  async delete(id: string) {
-    const entity = await this.repo.delete(id);
+  async delete(id: string, options?: any) {
+    const entity = await this.repo.delete(id, options);
     return entity;
   }
 }

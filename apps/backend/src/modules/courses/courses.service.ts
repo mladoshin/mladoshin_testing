@@ -30,24 +30,27 @@ import {
 } from './domains/course.domain';
 
 export interface ICoursesService {
-  create(createCourseDto: CreateCourseDto): Promise<CourseDomain>;
+  create(createCourseDto: CreateCourseDto, options?: any): Promise<CourseDomain>;
   findAll(
     user?: JWTPayload,
+    options?: any,
   ): Promise<CourseDomain[] | CourseDomainWithEnrollmentStatus[]>;
-  findOne(id: string, user?: JWTPayload): Promise<CourseDomain>;
-  update(id: string, updateCourseDto: UpdateCourseDto): Promise<CourseDomain>;
-  remove(id: string): Promise<CourseDomain>;
+  findOne(id: string, user?: JWTPayload, options?: any): Promise<CourseDomain>;
+  update(id: string, updateCourseDto: UpdateCourseDto, options?: any): Promise<CourseDomain>;
+  remove(id: string, options?: any): Promise<CourseDomain>;
   registerUser(
     userId: string,
     courseId: string,
+    options?: any,
   ): Promise<CourseEnrollmentDomain>;
-  findAllEnrollments(courseId: string): Promise<CourseEnrollmentDomain[]>;
-  findAllPayments(courseId: string): Promise<PaymentDomain[]>;
-  purchaseCourse(userId: string, courseId: string): Promise<PaymentDomain>;
-  doesUserHaveAccess(user: JWTPayload, courseId: string): Promise<boolean>;
+  findAllEnrollments(courseId: string, options?: any): Promise<CourseEnrollmentDomain[]>;
+  findAllPayments(courseId: string, options?: any): Promise<PaymentDomain[]>;
+  purchaseCourse(userId: string, courseId: string, options?: any): Promise<PaymentDomain>;
+  doesUserHaveAccess(user: JWTPayload, courseId: string, options?: any): Promise<boolean>;
   findAllLessons(
     user: JWTPayload,
     courseId: string,
+    options?: any,
   ): Promise<CourseLessonDomain[]>;
 }
 
@@ -63,16 +66,16 @@ export class CoursesService implements ICoursesService {
     private readonly lessonRepository: ICourseLessonRepo,
   ) {}
 
-  async findAllLessons(user: JWTPayload, courseId: string) {
-    const hasAccess = await this.doesUserHaveAccess(user, courseId);
+  async findAllLessons(user: JWTPayload, courseId: string, options?: any) {
+    const hasAccess = await this.doesUserHaveAccess(user, courseId, options);
     if (!hasAccess) {
       throw new RepositoryForbiddenError('У вас нет доступа к этому курсу.', CoursesService.name);
     }
 
-    return this.lessonRepository.findAllByCourse(courseId);
+    return this.lessonRepository.findAllByCourse(courseId, options);
   }
 
-  async doesUserHaveAccess(user: JWTPayload, courseId: string) {
+  async doesUserHaveAccess(user: JWTPayload, courseId: string, options?: any) {
     let result = false;
     if (user.role === UserRole.ADMIN) {
       result = true;
@@ -81,18 +84,20 @@ export class CoursesService implements ICoursesService {
         await this.courseEnrollmentRepository.findOneByUserAndCourse(
           user.id,
           courseId,
+          options,
         );
       result = (await courseEnrollment?.status) === CourseEnrollmentStatus.PAID;
     }
     return result;
   }
 
-  async getUserStatusInCourse(user: JWTPayload, courseId: string) {
+  async getUserStatusInCourse(user: JWTPayload, courseId: string, options?: any) {
     let result: CourseEnrollmentStatus | null = null;
     const courseEnrollment =
       await this.courseEnrollmentRepository.findOneByUserAndCourse(
         user.id,
         courseId,
+        options,
       );
     if (courseEnrollment) {
       result = courseEnrollment.status;
@@ -100,13 +105,14 @@ export class CoursesService implements ICoursesService {
     return result;
   }
 
-  async purchaseCourse(userId: string, courseId: string) {
+  async purchaseCourse(userId: string, courseId: string, options?: any) {
     try {
-      const course = await this.courseRepository.findOrFailById(courseId);
+      const course = await this.courseRepository.findOrFailById(courseId, options);
       const courseEnrollment =
         await this.courseEnrollmentRepository.findOneByUserAndCourse(
           userId,
           courseId,
+          options,
         );
       if (!courseEnrollment) {
         throw new RepositoryNotFoundError(
@@ -126,11 +132,12 @@ export class CoursesService implements ICoursesService {
         amount: course.price,
         userId,
         courseId,
-      });
+      }, options);
       await this.courseEnrollmentRepository.setStatus(
         userId,
         courseId,
         CourseEnrollmentStatus.PAID,
+        options,
       );
       return payment;
     } catch (err) {
@@ -138,9 +145,9 @@ export class CoursesService implements ICoursesService {
     }
   }
 
-  async findAllPayments(courseId: string) {
+  async findAllPayments(courseId: string, options?: any) {
     try {
-      return await this.paymentRepository.findAllByCourse(courseId);
+      return await this.paymentRepository.findAllByCourse(courseId, options);
     } catch (err) {
       if (err instanceof RepositoryNotFoundError) {
         throw new NotFoundException(err.message);
@@ -149,9 +156,9 @@ export class CoursesService implements ICoursesService {
     }
   }
 
-  async findAllEnrollments(courseId: string) {
+  async findAllEnrollments(courseId: string, options?: any) {
     try {
-      return await this.courseEnrollmentRepository.findManyByCourse(courseId);
+      return await this.courseEnrollmentRepository.findManyByCourse(courseId, options);
     } catch (err) {
       throw err;
     }
@@ -160,29 +167,32 @@ export class CoursesService implements ICoursesService {
   async registerUser(
     userId: string,
     courseId: string,
+    options?: any,
   ): Promise<CourseEnrollmentDomain> {
     try {
       return await this.courseEnrollmentRepository.registerUser(
         userId,
         courseId,
+        options,
       );
     } catch (err) {
       throw err
     }
   }
 
-  create(createCourseDto: CreateCourseDto): Promise<CourseDomain> {
-    return this.courseRepository.create(createCourseDto);
+  create(createCourseDto: CreateCourseDto, options?: any): Promise<CourseDomain> {
+    return this.courseRepository.create(createCourseDto, options);
   }
 
   async findAll(
     user?: JWTPayload,
+    options?: any,
   ): Promise<CourseDomain[] | CourseDomainWithEnrollmentStatus[]> {
-    const courses = await this.courseRepository.findAll();
+    const courses = await this.courseRepository.findAll(options);
     if (user) {
       for (const course of courses) {
         (course as CourseDomainWithEnrollmentStatus).enrollment_status =
-          await this.getUserStatusInCourse(user, course.id);
+          await this.getUserStatusInCourse(user, course.id, options);
       }
     }
     return courses;
@@ -191,13 +201,14 @@ export class CoursesService implements ICoursesService {
   async findOne(
     id: string,
     user?: JWTPayload,
+    options?: any,
   ): Promise<CourseDomain | CourseDomainWithEnrollmentStatus> {
     try {
-      const course = await this.courseRepository.findOrFailById(id);
+      const course = await this.courseRepository.findOrFailById(id, options);
 
       if (!!user) {
         (course as CourseDomainWithEnrollmentStatus).enrollment_status =
-          await this.getUserStatusInCourse(user, id);
+          await this.getUserStatusInCourse(user, id, options);
       }
       return course;
     } catch (err) {
@@ -205,17 +216,17 @@ export class CoursesService implements ICoursesService {
     }
   }
 
-  async update(id: string, updateCourseDto: UpdateCourseDto): Promise<CourseDomain> {
+  async update(id: string, updateCourseDto: UpdateCourseDto, options?: any): Promise<CourseDomain> {
     try {
-      return await this.courseRepository.update(id, updateCourseDto);
+      return await this.courseRepository.update(id, updateCourseDto, options);
     } catch (err) {
       throw err
     }
   }
 
-  async remove(id: string): Promise<CourseDomain> {
+  async remove(id: string, options?: any): Promise<CourseDomain> {
     try {
-      return await this.courseRepository.delete(id);
+      return await this.courseRepository.delete(id, options);
     } catch (err) {
       throw err;
     }

@@ -21,10 +21,16 @@ export class TestUtilsService {
 
     try {
       // Enable UUID extension globally (if not already enabled)
-      await queryRunner.query(`CREATE EXTENSION IF NOT EXISTS "uuid-ossp"`);
+      // Use advisory lock to prevent race conditions when multiple tests run in parallel
+      await queryRunner.query(`SELECT pg_advisory_lock(12345)`);
+      try {
+        await queryRunner.query(`CREATE EXTENSION IF NOT EXISTS "uuid-ossp"`);
+      } finally {
+        await queryRunner.query(`SELECT pg_advisory_unlock(12345)`);
+      }
 
-      // Create the schema
-      await queryRunner.query(`CREATE SCHEMA IF NOT EXISTS "${schemaName}"`);
+      // Create the schema with retry logic for race conditions
+      await this.createSchemaWithRetry(queryRunner, schemaName, 3);
       this.logger.log(`Schema ${schemaName} created`);
 
       // Set search path to the new schema and public for extensions
@@ -40,6 +46,41 @@ export class TestUtilsService {
     } finally {
       await queryRunner.release();
     }
+  }
+
+  /**
+   * Creates schema with retry logic to handle race conditions
+   */
+  private async createSchemaWithRetry(
+    queryRunner: any,
+    schemaName: string,
+    retries: number,
+  ): Promise<void> {
+    for (let i = 0; i < retries; i++) {
+      try {
+        await queryRunner.query(`CREATE SCHEMA IF NOT EXISTS "${schemaName}"`);
+        return;
+      } catch (error: any) {
+        // If it's the last retry or not a lock/concurrency error, throw
+        if (i === retries - 1 || !this.isRetryableError(error)) {
+          throw error;
+        }
+        // Wait a bit before retry with exponential backoff
+        const delay = Math.pow(2, i) * 100;
+        this.logger.warn(
+          `Schema creation attempt ${i + 1} failed, retrying in ${delay}ms...`,
+        );
+        await new Promise((resolve) => setTimeout(resolve, delay));
+      }
+    }
+  }
+
+  /**
+   * Checks if error is retryable (lock timeout, deadlock, etc.)
+   */
+  private isRetryableError(error: any): boolean {
+    const retryableCodes = ['40001', '40P01', '55P03']; // serialization_failure, deadlock_detected, lock_not_available
+    return error.code && retryableCodes.includes(error.code);
   }
 
   /**
@@ -74,14 +115,17 @@ export class TestUtilsService {
       // Set search path to the target schema
       await queryRunner.query(`SET search_path TO "${schemaName}"`);
 
-      // Get all table names in the schema
-      const tables = await queryRunner.query(`
+      // Get all table names in the schema (using parameterized query)
+      const tables = await queryRunner.query(
+        `
         SELECT tablename
         FROM pg_tables
-        WHERE schemaname = '${schemaName}'
+        WHERE schemaname = $1
         AND tablename NOT LIKE 'pg_%'
         AND tablename != 'migrations'
-      `);
+      `,
+        [schemaName],
+      );
 
       // Truncate all tables
       if (tables.length > 0) {

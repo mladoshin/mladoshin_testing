@@ -1,6 +1,6 @@
 import { Injectable } from '@nestjs/common';
-import { InjectRepository } from '@nestjs/typeorm';
-import { Repository } from 'typeorm';
+import { InjectDataSource, InjectRepository } from '@nestjs/typeorm';
+import { DataSource, Repository } from 'typeorm';
 import {
   RepositoryNotFoundError,
   RepositoryUnknownError,
@@ -12,21 +12,23 @@ import { PaymentDomain } from './domains/payment.domain';
 import { PaymentsMapper } from './payments.mapper';
 
 export interface IPaymentRepo {
-  create(createPaymentDto: CreatePaymentDto): Promise<PaymentDomain>;
+  create(createPaymentDto: CreatePaymentDto, options?: any): Promise<PaymentDomain>;
   update(
     id: string,
     updatePaymentDto: UpdatePaymentDto,
+    options?: any,
   ): Promise<PaymentDomain>;
-  delete(id: string): Promise<PaymentDomain>;
-  findById(id: string): Promise<PaymentDomain | null>;
-  findOrFailById(id: string): Promise<PaymentDomain>;
+  delete(id: string, options?: any): Promise<PaymentDomain>;
+  findById(id: string, options?: any): Promise<PaymentDomain | null>;
+  findOrFailById(id: string, options?: any): Promise<PaymentDomain>;
   findByUserAndCourse(
     userId: string,
     courseId: string,
+    options?: any,
   ): Promise<PaymentDomain | null>;
-  findAllByCourse(courseId: string): Promise<PaymentDomain[]>;
-  findAllByUser(userId: string): Promise<PaymentDomain[]>;
-  findAll(): Promise<PaymentDomain[]>;
+  findAllByCourse(courseId: string, options?: any): Promise<PaymentDomain[]>;
+  findAllByUser(userId: string, options?: any): Promise<PaymentDomain[]>;
+  findAll(options?: any): Promise<PaymentDomain[]>;
 }
 
 @Injectable()
@@ -34,16 +36,27 @@ export class PaymentRepo implements IPaymentRepo {
   public constructor(
     @InjectRepository(Payment)
     private readonly repository: Repository<Payment>,
+    @InjectDataSource() private dataSource: DataSource,
   ) {}
 
-  async create(createPaymentDto: CreatePaymentDto) {
-    const payment = this.repository.create({
+  private async getORMRepository(options?: any) {
+    const entityManager = this.dataSource.createEntityManager();
+    if (options?.schema) {
+      await entityManager.query(`SET search_path TO "${options.schema}"`);
+    }
+    return entityManager.getRepository(Payment);
+  }
+
+  async create(createPaymentDto: CreatePaymentDto, options?: any) {
+    const repository = await this.getORMRepository(options);
+
+    const payment = repository.create({
       user_id: createPaymentDto.userId,
       course_id: createPaymentDto.courseId,
       amount: createPaymentDto.amount,
     });
     try {
-      const paymentDBEntity = await this.repository.save(payment);
+      const paymentDBEntity = await repository.save(payment);
       return PaymentsMapper.toDomainEntity(paymentDBEntity);
     } catch (err) {
       throw new RepositoryUnknownError(err.message, PaymentRepo.name);

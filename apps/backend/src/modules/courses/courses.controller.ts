@@ -8,6 +8,7 @@ import {
   Delete,
   UseGuards,
   Inject,
+  Req,
 } from '@nestjs/common';
 import { ICoursesService } from './courses.service';
 import { CreateCourseDto } from './dto/create-course.dto';
@@ -33,8 +34,9 @@ export class CoursesController {
   @AccessLog()
   async create(
     @Body() createCourseDto: CreateCourseDto,
+    @Req() req,
   ): Promise<CourseResponse> {
-    const course = await this.coursesService.create(createCourseDto);
+    const course = await this.coursesService.create(createCourseDto, {schema: req.headers['x-test-schema']});
     return CourseResponse.make(course);
   }
 
@@ -44,10 +46,12 @@ export class CoursesController {
   async register(
     @User() user: JWTPayload,
     @Param('id') courseId: string,
+    @Req() req,
   ): Promise<CourseEnrollmentResponse> {
     const courseEnrollment = await this.coursesService.registerUser(
       user.id,
       courseId,
+      {schema: req.headers['x-test-schema']},
     );
     return CourseEnrollmentResponse.make(courseEnrollment);
   }
@@ -58,10 +62,12 @@ export class CoursesController {
   async purchaseCourse(
     @User() user: JWTPayload,
     @Param('id') courseId: string,
+    @Req() req,
   ): Promise<any> {
     const courseEnrollment = await this.coursesService.purchaseCourse(
       user.id,
       courseId,
+      {schema: req.headers['x-test-schema']},
     );
     return { success: true };
   }
@@ -69,8 +75,8 @@ export class CoursesController {
   @Get()
   @UseGuards(OptionalJwtAuthGuard)
   @AccessLog()
-  async findAll(@User() user?: JWTPayload): Promise<CourseResponse[]> {
-    const courses = await this.coursesService.findAll(user);
+  async findAll(@User() user?: JWTPayload, @Req() req?): Promise<CourseResponse[]> {
+    const courses = await this.coursesService.findAll(user, {schema: req.headers['x-test-schema']});
     return CourseResponse.collection(courses);
   }
 
@@ -80,8 +86,9 @@ export class CoursesController {
   async findAllLessons(
     @User() user: JWTPayload,
     @Param('id') courseId: string,
+    @Req() req,
   ): Promise<CourseLessonResponse[]> {
-    const lessons = await this.coursesService.findAllLessons(user, courseId);
+    const lessons = await this.coursesService.findAllLessons(user, courseId, {schema: req.headers['x-test-schema']});
     return CourseLessonResponse.collection(lessons);
   }
 
@@ -90,9 +97,10 @@ export class CoursesController {
   @AccessLog()
   async findAllEnrollments(
     @Param('id') courseId: string,
+    @Req() req,
   ): Promise<CourseEnrollmentResponse[]> {
     const courseEnrollments =
-      await this.coursesService.findAllEnrollments(courseId);
+      await this.coursesService.findAllEnrollments(courseId, {schema: req.headers['x-test-schema']});
     return CourseEnrollmentResponse.collection(courseEnrollments);
   }
 
@@ -101,8 +109,9 @@ export class CoursesController {
   @AccessLog()
   async findAllPayments(
     @Param('id') courseId: string,
+    @Req() req,
   ): Promise<PaymentResponse[]> {
-    const coursePayments = await this.coursesService.findAllPayments(courseId);
+    const coursePayments = await this.coursesService.findAllPayments(courseId, {schema: req.headers['x-test-schema']});
     return PaymentResponse.collection(coursePayments);
   }
 
@@ -112,8 +121,9 @@ export class CoursesController {
   async findOne(
     @Param('id') id: string,
     @User() user?: JWTPayload,
+    @Req() req?,
   ): Promise<CourseResponse> {
-    const course = await this.coursesService.findOne(id, user);
+    const course = await this.coursesService.findOne(id, user, {schema: req.headers['x-test-schema']});
     return CourseResponse.make(course);
   }
 
@@ -123,16 +133,17 @@ export class CoursesController {
   async update(
     @Param('id') id: string,
     @Body() updateCourseDto: UpdateCourseDto,
+    @Req() req,
   ): Promise<CourseResponse> {
-    const course = await this.coursesService.update(id, updateCourseDto);
+    const course = await this.coursesService.update(id, updateCourseDto, {schema: req.headers['x-test-schema']});
     return CourseResponse.make(course);
   }
 
   @Delete(':id')
   @UseGuards(JwtAuthGuard)
   @AccessLog()
-  async remove(@Param('id') id: string): Promise<CourseResponse> {
-    const course = await this.coursesService.remove(id);
+  async remove(@Param('id') id: string, @Req() req): Promise<CourseResponse> {
+    const course = await this.coursesService.remove(id, {schema: req.headers['x-test-schema']});
     return CourseResponse.make(course);
   }
 }
